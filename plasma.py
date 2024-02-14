@@ -108,6 +108,7 @@ gc.collect()
 # Загрузка всех столбцов из файла
 data = pd.read_table(path_to_proj + "fil.dat", sep=" ", names=["t"] + ["ch{}".format(i) for i in range(1, 300)])
 
+print(f"Выбран файл {file}")
 # Предложение пользователю выбрать канал
 available_channels = [col for col in data.columns if col != "t" and str(data[col][0]) != 'nan']
 print("Доступные каналы:", ', '.join(available_channels))
