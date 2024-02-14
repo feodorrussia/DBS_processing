@@ -201,25 +201,26 @@ neuro_filter = keras.models.load_model(path_to_proj + "neuro_filter.h5")
 scaler = joblib.load(path_to_proj + "scaler_for_neuro_filter.pkl")
 
 #
-edges = np.linspace(0.35, 0.95, 61)
+edges = np.linspace(0, 1, 100)
 fil_nums = []
 for i in edges:
     filtered = neuro_filter.predict(scaler.transform(filaments_smooth[1])) > i
-    fil_nums.append(len(filtered))
+    fil_nums.append(len(list(filter(lambda x: x, filtered))))
 
 fig, ax = plt.subplots()
 ax.plot(edges, fil_nums)
-
+ax.grid()
 ax.set_ylabel('Numbers of filtered filaments')
 ax.set_title('Filtered filaments by edge')
 plt.show()
+plt.clf()
 
 filtered = neuro_filter.predict(scaler.transform(filaments_smooth[1])) > 0.75
 
 print("==========================================")
 print(f"Количество найденных филаментов: {len(filaments[0])}")
 print("==========================================")
-print(f"Количество отобранных филаментов: {len(filtered[0])}")
+print(f"Количество отобранных филаментов: {len(list(filter(lambda x: x, filtered)))}")
 print("==========================================")
 
 #
