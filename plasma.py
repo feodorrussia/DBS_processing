@@ -60,7 +60,7 @@ def subtract_last_detection_time(df, detection_time):
     return result
 
 
-path_to_proj = ""  # Plasma_processing/
+path_to_proj = "Plasma_processing/"  # Plasma_processing/
 
 for i in os.listdir():
     if i[-4:] == ".dat" and i != "fil.dat":
@@ -164,7 +164,7 @@ preprocessed = ";".join(map(str, y_f)).split("0.0;" * tolerance)
 preprocessed = [i.split(";") for i in preprocessed if len(i) > 1]
 for i in range(len(preprocessed)):
     preprocessed[i] = [float(j) for j in preprocessed[i] if j != ""]
-final = np.array([i for i in preprocessed if len(i) > length])
+final = np.array([i for i in preprocessed if len(i) > length], dtype="object")
 
 for i in range(len(final)):
     final[i] = np.array(final[i])
@@ -197,7 +197,7 @@ for i in range(len(final)):
         filaments_smooth[0].append(x_smooth)
         filaments_smooth[1].append(y_smooth)
 
-neuro_filter = keras.models.load_model("plasma_filaments/neuro_filter.h5")
+neuro_filter = keras.models.load_model(path_to_proj + "neuro_filter.h5")
 scaler = joblib.load(path_to_proj + "scaler_for_neuro_filter.pkl")
 
 #
