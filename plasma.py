@@ -208,7 +208,7 @@ for i in edges:
     fil_nums.append(len(filtered))
 
 fig, ax = plt.subplots()
-ax.bar(edges, fil_nums, label=edges)
+ax.plot(edges, fil_nums)
 
 ax.set_ylabel('Numbers of filtered filaments')
 ax.set_title('Filtered filaments by edge')
