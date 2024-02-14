@@ -9,6 +9,7 @@ import keras
 import tensorflow
 import os
 import shutil
+import gc
 
 
 def x_in_y(query, base):
@@ -102,6 +103,8 @@ lines = [line.replace('  ', ' ') for line in lines]
 with open(path_to_proj + 'fil.dat', 'w') as f:
     f.writelines(lines)
 
+gc.collect()
+
 # Загрузка всех столбцов из файла
 data = pd.read_table(path_to_proj + "fil.dat", sep=" ", names=["t"] + ["ch{}".format(i) for i in range(1, 300)])
 
@@ -125,6 +128,8 @@ y = np.array(data[selected_channel][(data.t > start) * (data.t < end)])
 
 y_d2 = np.diff(y, n=2)
 x_d2 = x[:-2]
+
+gc.collect()
 
 b, a = signal.butter(3, 0.4)
 
@@ -197,6 +202,8 @@ for i in range(len(final)):
         filaments_smooth[0].append(x_smooth)
         filaments_smooth[1].append(y_smooth)
 
+gc.collect()
+
 neuro_filter = keras.models.load_model(path_to_proj + "neuro_filter.h5")
 scaler = joblib.load(path_to_proj + "scaler_for_neuro_filter.pkl")
 
@@ -214,6 +221,7 @@ scaler = joblib.load(path_to_proj + "scaler_for_neuro_filter.pkl")
 # ax.set_title('Filtered filaments by edge')
 # plt.show()
 # plt.clf()
+# gc.collect()
 
 filtered = neuro_filter.predict(scaler.transform(filaments_smooth[1])) > 0.75
 
@@ -222,6 +230,8 @@ print(f"Количество найденных филаментов: {len(filam
 print("==========================================")
 print(f"Количество отобранных филаментов: {len(list(filter(lambda x: x, filtered)))}")
 print("==========================================")
+
+gc.collect()
 
 #
 if os.path.isdir(path_to_proj + "data/"):
@@ -278,6 +288,7 @@ for i in range(len(filaments[0])):
             dpi=120)
         # plt.show()
         plt.close()
+    gc.collect()
 
 info.to_excel(file[:-4] + ".xlsx", index=False)
 
