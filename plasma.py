@@ -293,3 +293,4 @@ for i in range(len(filaments[0])):
 info.to_excel(file[:-4] + ".xlsx", index=False)
 
 shutil.make_archive("data_tot", 'zip', path_to_proj + "data")
+os.remove(path_to_proj + 'fil.dat')
