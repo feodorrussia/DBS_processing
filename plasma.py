@@ -257,6 +257,7 @@ for i in range(len(filaments[0])):
             f"""{path_to_proj}data/tot/{i} {names[c]} на участке [{filament_t.min()}, {filament_t.max()}].png""",
             dpi=120)
         # plt.show()
+        plt.close()
         detection_time = (filament_t.max() - filament_t.min()) / 2 + filament_t.min()
         shift_frequency = "Wait for updates..."
         filament_duration = round((filament_t.max() - filament_t.min()) * 1000)
@@ -276,6 +277,7 @@ for i in range(len(filaments[0])):
             f"""{path_to_proj}data/tot/{i} {names[c]} на участке [{filament_t.min()}, {filament_t.max()}].png""",
             dpi=120)
         # plt.show()
+        plt.close()
 
 info.to_excel(file[:-4] + ".xlsx", index=False)
 
