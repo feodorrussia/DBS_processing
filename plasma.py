@@ -214,7 +214,7 @@ ax.set_ylabel('Numbers of filtered filaments')
 ax.set_title('Filtered filaments by edge')
 plt.show()
 
-filtered = neuro_filter.predict(scaler.transform(filaments_smooth[1])) > 0.57
+filtered = neuro_filter.predict(scaler.transform(filaments_smooth[1])) > 0.75
 
 print("==========================================")
 print(f"Количество найденных филаментов: {len(filaments[0])}")
@@ -278,4 +278,4 @@ for i in range(len(filaments[0])):
 
 info.to_excel(file[:-4] + ".xlsx", index=False)
 
-shutil.make_archive("data_zip", 'zip', path_to_proj + "data")
+shutil.make_archive("data_tot", 'zip', path_to_proj + "data")
