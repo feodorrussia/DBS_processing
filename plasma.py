@@ -200,20 +200,20 @@ for i in range(len(final)):
 neuro_filter = keras.models.load_model(path_to_proj + "neuro_filter.h5")
 scaler = joblib.load(path_to_proj + "scaler_for_neuro_filter.pkl")
 
+# Построение графика Количества отобраннных филаментов от величины граничной вероятности
+# edges = np.linspace(0, 1, 100)
+# fil_nums = []
+# for i in edges:
+#     filtered = neuro_filter.predict(scaler.transform(filaments_smooth[1])) > i
+#     fil_nums.append(len(list(filter(lambda x: x, filtered))))
 #
-edges = np.linspace(0, 1, 100)
-fil_nums = []
-for i in edges:
-    filtered = neuro_filter.predict(scaler.transform(filaments_smooth[1])) > i
-    fil_nums.append(len(list(filter(lambda x: x, filtered))))
-
-fig, ax = plt.subplots()
-ax.plot(edges, fil_nums)
-ax.grid()
-ax.set_ylabel('Numbers of filtered filaments')
-ax.set_title('Filtered filaments by edge')
-plt.show()
-plt.clf()
+# fig, ax = plt.subplots()
+# ax.plot(edges, fil_nums)
+# ax.grid()
+# ax.set_ylabel('Numbers of filtered filaments')
+# ax.set_title('Filtered filaments by edge')
+# plt.show()
+# plt.clf()
 
 filtered = neuro_filter.predict(scaler.transform(filaments_smooth[1])) > 0.75
 
