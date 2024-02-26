@@ -10,6 +10,7 @@ import tensorflow
 import os
 import shutil
 import gc
+import sklearn
 
 
 def x_in_y(query, base):
@@ -61,7 +62,7 @@ def subtract_last_detection_time(df, detection_time):
     return result
 
 
-path_to_proj = "Plasma_processing/"  # Plasma_processing/
+path_to_proj = ""  # Plasma_processing/
 
 for i in os.listdir():
     if i[-4:] == ".dat" and i != "fil.dat":
@@ -224,7 +225,7 @@ scaler = joblib.load(path_to_proj + "scaler_for_neuro_filter.pkl")
 # plt.clf()
 # gc.collect()
 
-filtered = neuro_filter.predict(scaler.transform(filaments_smooth[1])) > 0.75
+filtered = neuro_filter.predict(scaler.transform(filaments_smooth[1])) > 0.9
 
 print("==========================================")
 print(f"Количество найденных филаментов: {len(filaments[0])}")
@@ -291,7 +292,8 @@ for i in range(len(filaments[0])):
         plt.close()
     gc.collect()
 
-info.to_excel(file[:-4] + ".xlsx", index=False)
+# info.to_excel(file[:-4] + ".xlsx", index=False)
 
 shutil.make_archive("data_tot", 'zip', path_to_proj + "data")
 os.remove(path_to_proj + 'fil.dat')
+gc.collect()
