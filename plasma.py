@@ -367,7 +367,8 @@ for i in range(len(filaments[0])):
         if os.path.exists(path_to_csv) and os.path.exists(path_to_csv + name_csv):
             df.to_csv(path_to_csv + name_csv, mode='a', header=False, index=False)
         else:
-            os.mkdir(path_to_csv)
+            if not os.path.exists(path_to_csv):
+                os.mkdir(path_to_csv)
             df.to_csv(path_to_csv + name_csv, index=False)
         # очистка Data Frame
         df = df.iloc[0:0]
@@ -384,7 +385,8 @@ if len(df.count(axis="rows")) > 0:
     if os.path.exists(path_to_csv) and os.path.exists(path_to_csv + name_csv):
         df.to_csv(path_to_csv + name_csv, mode='a', header=False, index=False)
     else:
-        os.mkdir(path_to_csv)
+        if not os.path.exists(path_to_csv):
+            os.mkdir(path_to_csv)
         df.to_csv(path_to_csv + name_csv, index=False)
 
     if os.path.exists(path_to_csv) and os.path.exists(path_to_csv + file_fragments_csv_name):
