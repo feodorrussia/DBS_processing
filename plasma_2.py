@@ -305,8 +305,8 @@ print("==========================================")
 gc.collect()
 
 path_to_csv = "data_csv/"
-name_csv = f"{file[:-4]}_result_data.csv"
-file_fragments_csv_name = f"{file[:-4]}_result_fragments.csv"
+name_csv = f"new_{file[:-4]}_result_data.csv"
+file_fragments_csv_name = f"new_{file[:-4]}_result_fragments.csv"
 
 signal_maxLength = 512
 FILE_D_ID = "00000"  # file[:5]
