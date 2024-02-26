@@ -11,6 +11,7 @@ import os
 import shutil
 import gc
 import sklearn
+import scipy.interpolate as sc_i
 
 
 def x_in_y(query, base):
@@ -236,64 +237,163 @@ print("==========================================")
 gc.collect()
 
 #
-if os.path.isdir(path_to_proj + "data/"):
-    shutil.rmtree(path_to_proj + "data/")
-    os.mkdir(path_to_proj + "data/")
-    os.mkdir(path_to_proj + "data/tot/")
-else:
-    os.mkdir(path_to_proj + "data/")
-    os.mkdir(path_to_proj + "data/tot/")
+# if os.path.isdir(path_to_proj + "data/"):
+#     shutil.rmtree(path_to_proj + "data/")
+#     os.mkdir(path_to_proj + "data/")
+#     os.mkdir(path_to_proj + "data/tot/")
+# else:
+#     os.mkdir(path_to_proj + "data/")
+#     os.mkdir(path_to_proj + "data/tot/")
+#
+# # Создание пустой таблицы
+# columns = {"Время обнаружения филамента, мс": [],
+#            "Частота допл. сдвига": [],
+#            "Длительность филамента, мкс": [],
+#            "Время между данным и предыдущим, мкс": []}
+# info = pd.DataFrame(columns)
+#
+# for i in range(len(filaments[0])):
+#     filament_t = filaments[0][i]
+#     filament_f = filaments[1][i]
+#
+#     names = ["Филамент", "Не филамент"]
+#
+#     if filtered[i]:
+#         c = 0
+#         fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(8, 6))
+#         ax.set_title(f"""{names[c]} на участке [{filament_t.min()}, {filament_t.max()}]""")
+#         ax.plot(filament_t, filament_f, color=colors[c])
+#         plt.savefig(
+#             f"""{path_to_proj}data/{i} {names[c]} на участке [{filament_t.min()}, {filament_t.max()}].png""",
+#             dpi=120)
+#         plt.savefig(
+#             f"""{path_to_proj}data/tot/{i} {names[c]} на участке [{filament_t.min()}, {filament_t.max()}].png""",
+#             dpi=120)
+#         # plt.show()
+#         plt.close()
+#         detection_time = (filament_t.max() - filament_t.min()) / 2 + filament_t.min()
+#         shift_frequency = "Wait for updates..."
+#         filament_duration = round((filament_t.max() - filament_t.min()) * 1000)
+#         time_since_previous = subtract_last_detection_time(info, detection_time)
+#
+#         row = {"Время обнаружения филамента, мс": detection_time,
+#                "Частота допл. сдвига": shift_frequency,
+#                "Длительность филамента, мкс": filament_duration,
+#                "Время между данным и предыдущим, мкс": time_since_previous}
+#         info = pd.concat([info, pd.DataFrame([row])], ignore_index=True)
+#     else:
+#         c = 1
+#         fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(8, 6))
+#         ax.set_title(f"""{names[c]} на участке [{filament_t.min()}, {filament_t.max()}]""")
+#         ax.plot(filament_t, filament_f, color=colors[c])
+#         plt.savefig(
+#             f"""{path_to_proj}data/tot/{i} {names[c]} на участке [{filament_t.min()}, {filament_t.max()}].png""",
+#             dpi=120)
+#         # plt.show()
+#         plt.close()
+#     gc.collect()
+#
+# # info.to_excel(file[:-4] + ".xlsx", index=False)
+#
+# shutil.make_archive("data_tot", 'zip', path_to_proj + "data")
+# os.remove(path_to_proj + 'fil.dat')
 
-# Создание пустой таблицы
-columns = {"Время обнаружения филамента, мс": [],
-           "Частота допл. сдвига": [],
-           "Длительность филамента, мкс": [],
-           "Время между данным и предыдущим, мкс": []}
-info = pd.DataFrame(columns)
+path_to_csv = "data_csv/"
+name_csv = f"{file[:-4]}_result_data.csv"
+file_fragments_csv_name = f"{file[:-4]}_result_fragments.csv"
+
+signal_maxLength = 512
+FILE_D_ID = "00000"  # file[:5]
+SIGNAL_RATE = 4
+
+
+df = pd.DataFrame(columns=(['D_ID', 'Y', 'Length', 'Rate'] + [str(i) for i in range(signal_maxLength)]))
+df_2 = pd.DataFrame(columns=(['Y', 'Left', 'Right', 'Rate']))
+
+#
+fragments_count = 0
+filaments_count = 0
+tot_filaments_mark = 0
+noise_count = 0
 
 for i in range(len(filaments[0])):
-    filament_t = filaments[0][i]
-    filament_f = filaments[1][i]
+    fragment_x = filaments[0][i].to_list()
+    fragment_values = filaments[1][i].to_list()
 
-    names = ["Филамент", "Не филамент"]
+    # получение границ фрагмента из введённой строки
+    fragment_range = [min(fragment_x), max(fragment_x)]
+    # нормировка границ (если выходит за рамки сигнала) и получение его длительности
+    fragment_range = [max(fragment_range[0], start), min(fragment_range[1], end)]
+    fragment_length = fragment_range[1] - fragment_range[0]
 
-    if filtered[i]:
-        c = 0
-        fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(8, 6))
-        ax.set_title(f"""{names[c]} на участке [{filament_t.min()}, {filament_t.max()}]""")
-        ax.plot(filament_t, filament_f, color=colors[c])
-        plt.savefig(
-            f"""{path_to_proj}data/{i} {names[c]} на участке [{filament_t.min()}, {filament_t.max()}].png""",
-            dpi=120)
-        plt.savefig(
-            f"""{path_to_proj}data/tot/{i} {names[c]} на участке [{filament_t.min()}, {filament_t.max()}].png""",
-            dpi=120)
-        # plt.show()
-        plt.close()
-        detection_time = (filament_t.max() - filament_t.min()) / 2 + filament_t.min()
-        shift_frequency = "Wait for updates..."
-        filament_duration = round((filament_t.max() - filament_t.min()) * 1000)
-        time_since_previous = subtract_last_detection_time(info, detection_time)
+    if fragment_length <= 0:
+        print("===== Length error =====")
+        continue
 
-        row = {"Время обнаружения филамента, мс": detection_time,
-               "Частота допл. сдвига": shift_frequency,
-               "Длительность филамента, мкс": filament_duration,
-               "Время между данным и предыдущим, мкс": time_since_previous}
-        info = pd.concat([info, pd.DataFrame([row])], ignore_index=True)
+    if len(fragment_x) <= 5 or len(fragment_x) >= 500:
+        print("===== Warning =====")
+        # запрос команды подтверждения
+        print(f"Фрагмент {i} содержит меньше 5 или больше 500 точек ({len(fragment_x)} точек)")
+
+    # получение с помощью интерполяции квадратичным сплайном нужного количества точек фрагмента (510 точек)
+    fragment_interpolate_values = sc_i.interp1d(fragment_x, fragment_values, kind="quadratic")(
+        np.linspace(fragment_x[0], fragment_x[-1], signal_maxLength))
+
+    # получение метки фрагмента: 1 - филамент, 0 - не филамент
+    fragment_mark = 1 if filtered[i] else 0
+
+    # добавление данных в Data Frame
+    df.loc[-1] = [FILE_D_ID, fragment_mark, fragment_length, SIGNAL_RATE] + list(fragment_interpolate_values)  # adding a row
+    df.index = df.index + 1  # shifting index
+    df = df.sort_index()  # sorting by index
+
+    # добавление данных в Data Frame 2
+    df_2.loc[-1] = [fragment_mark, min(fragment_range), max(fragment_range), SIGNAL_RATE]  # adding a row
+    df_2.index = df_2.index + 1  # shifting index
+    df_2 = df_2.sort_index()  # sorting by index
+
+    # обработка автоматического сохранения Data Frame
+    fragments_count += 1
+    if fragment_mark == 0:
+        noise_count += 1
     else:
-        c = 1
-        fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(8, 6))
-        ax.set_title(f"""{names[c]} на участке [{filament_t.min()}, {filament_t.max()}]""")
-        ax.plot(filament_t, filament_f, color=colors[c])
-        plt.savefig(
-            f"""{path_to_proj}data/tot/{i} {names[c]} на участке [{filament_t.min()}, {filament_t.max()}].png""",
-            dpi=120)
-        # plt.show()
-        plt.close()
-    gc.collect()
+        filaments_count += 1
+        tot_filaments_mark += fragment_mark
+    if fragments_count % 10 == 0:
+        print(f"Количество сохранённых фрагментов: {fragments_count}\n" +
+              f"Филаментов: {filaments_count} (средняя оценка филаментов: {tot_filaments_mark / filaments_count})" +
+              f"\nНе филаментов: {noise_count}")
 
-# info.to_excel(file[:-4] + ".xlsx", index=False)
+        if os.path.exists(path_to_csv) and os.path.exists(path_to_csv + name_csv):
+            df.to_csv(path_to_csv + name_csv, mode='a', header=False, index=False)
+        else:
+            os.mkdir(path_to_csv)
+            df.to_csv(path_to_csv + name_csv, index=False)
+        # очистка Data Frame
+        df = df.iloc[0:0]
 
-shutil.make_archive("data_tot", 'zip', path_to_proj + "data")
-os.remove(path_to_proj + 'fil.dat')
+        if os.path.exists(path_to_csv) and os.path.exists(path_to_csv + file_fragments_csv_name):
+            df.to_csv(path_to_csv + file_fragments_csv_name, mode='a', header=False, index=False)
+        else:
+            df.to_csv(path_to_csv + file_fragments_csv_name, index=False)
+        # очистка Data Frame
+        df_2 = df_2.iloc[0:0]
+
+# сохранение Data Frame
+if len(df.count(axis="rows")) > 0:
+    if os.path.exists(path_to_csv) and os.path.exists(path_to_csv + name_csv):
+        df.to_csv(path_to_csv + name_csv, mode='a', header=False, index=False)
+    else:
+        os.mkdir(path_to_csv)
+        df.to_csv(path_to_csv + name_csv, index=False)
+
+    if os.path.exists(path_to_csv) and os.path.exists(path_to_csv + file_fragments_csv_name):
+        df.to_csv(path_to_csv + file_fragments_csv_name, mode='a', header=False, index=False)
+    else:
+        df.to_csv(path_to_csv + file_fragments_csv_name, index=False)
+
+print(f"Количество сохранённых фрагментов: {fragments_count}\n" +
+      f"Филаментов: {filaments_count} (средняя оценка филаментов: {tot_filaments_mark / filaments_count})" +
+      f"\nНе филаментов: {noise_count}")
+
 gc.collect()
