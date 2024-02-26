@@ -403,3 +403,5 @@ if len(df.count(axis="rows")) > 0:
 print(f"Количество сохранённых фрагментов: {fragments_count}\n" +
       f"Филаментов: {filaments_count} (средняя оценка филаментов: {tot_filaments_mark / filaments_count})" +
       f"\nНе филаментов: {noise_count}")
+
+os.remove(path_to_proj + 'fil.dat')

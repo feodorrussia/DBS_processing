@@ -398,4 +398,5 @@ print(f"Количество сохранённых фрагментов: {fragm
       f"Филаментов: {filaments_count} (средняя оценка филаментов: {tot_filaments_mark / filaments_count})" +
       f"\nНе филаментов: {noise_count}")
 
+os.remove(path_to_proj + 'fil.dat')
 gc.collect()
