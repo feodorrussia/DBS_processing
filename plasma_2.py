@@ -309,7 +309,7 @@ name_csv = f"new_{file[:-4]}_result_data.csv"
 file_fragments_csv_name = f"new_{file[:-4]}_result_fragments.csv"
 
 signal_maxLength = 512
-FILE_D_ID = "00000"  # file[:5]
+FILE_D_ID = file[:5]  # "00000"
 
 # %%
 df = pd.DataFrame(columns=(['D_ID', 'Y', 'Length', 'Rate'] + [str(i) for i in range(signal_maxLength)]))
