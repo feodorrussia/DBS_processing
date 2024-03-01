@@ -63,7 +63,7 @@ def subtract_last_detection_time(df, detection_time):
     return result
 
 
-path_to_proj = ""  # Plasma_processing/
+path_to_proj = "Plasma_processing/"  # Plasma_processing/
 
 for i in os.listdir():
     if i[-4:] == ".dat" and i != "fil.dat":
@@ -239,7 +239,7 @@ print("==========================================")
 
 gc.collect()
 
-path_to_csv = "data_csv/"
+path_to_csv = ""  # data_csv/
 name_csv = f"{file[:-4]}_result_data.csv"
 file_fragments_csv_name = f"{file[:-4]}_result_fragments.csv"
 

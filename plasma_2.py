@@ -271,8 +271,12 @@ def f1_m(y_true, y_pred):
 
 
 # neuro-filter
-name_filter = "cnn_bin_class_4"
-neuro_filter = keras.models.load_model(path_to_proj + f"models/{name_filter}.keras", safe_mode=False)
+name_filter = "cnn_bin_class_2"
+neuro_filter = keras.models.load_model(path_to_proj + f"models/{name_filter}.keras",
+                                       custom_objects={"focal_crossentropy": focal_crossentropy,
+                                                       "f1_m": f1_m,
+                                                       "precision_m": precision_m,
+                                                       "recall_m": recall_m})  # safe_mode=False
 predictions = neuro_filter.predict(fragments_smooth)
 
 # # Построение графика Количества отобраннных филаментов от величины граничной вероятности
@@ -302,7 +306,7 @@ print("==========================================")
 
 gc.collect()
 
-path_to_csv = "data_csv/"
+path_to_csv = ""  # data_csv/
 name_csv = f"new_{file[:-4]}_{name_filter}_result_data.csv"
 file_fragments_csv_name = f"new_{file[:-4]}_{name_filter}_result_fragments.csv"
 
