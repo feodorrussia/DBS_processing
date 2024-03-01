@@ -207,14 +207,16 @@ for i in range(len(final)):
 
 gc.collect()
 
-neuro_filter = keras.models.load_model(path_to_proj + "neuro_filter.h5")
-scaler = joblib.load(path_to_proj + "scaler_for_neuro_filter.pkl")
+neuro_filter = keras.models.load_model(path_to_proj + "models/neuro_filter.h5")
+scaler = joblib.load(path_to_proj + "models/scaler_for_neuro_filter.pkl")
+
+predictions = neuro_filter.predict(scaler.transform(filaments_smooth[1]))
 
 # Построение графика Количества отобраннных филаментов от величины граничной вероятности
 # edges = np.linspace(0, 1, 100)
 # fil_nums = []
 # for i in edges:
-#     filtered = neuro_filter.predict(scaler.transform(filaments_smooth[1])) > i
+#     filtered = predictions > i
 #     fil_nums.append(len(list(filter(lambda x: x, filtered))))
 #
 # fig, ax = plt.subplots()
@@ -226,7 +228,8 @@ scaler = joblib.load(path_to_proj + "scaler_for_neuro_filter.pkl")
 # plt.clf()
 # gc.collect()
 
-filtered = neuro_filter.predict(scaler.transform(filaments_smooth[1])) > 0.9
+edge = 0.9
+filtered = predictions > edge
 
 print("==========================================")
 print(f"Количество найденных филаментов: {len(filaments[0])}")
@@ -235,68 +238,6 @@ print(f"Количество отобранных филаментов: {len(lis
 print("==========================================")
 
 gc.collect()
-
-#
-# if os.path.isdir(path_to_proj + "data/"):
-#     shutil.rmtree(path_to_proj + "data/")
-#     os.mkdir(path_to_proj + "data/")
-#     os.mkdir(path_to_proj + "data/tot/")
-# else:
-#     os.mkdir(path_to_proj + "data/")
-#     os.mkdir(path_to_proj + "data/tot/")
-#
-# # Создание пустой таблицы
-# columns = {"Время обнаружения филамента, мс": [],
-#            "Частота допл. сдвига": [],
-#            "Длительность филамента, мкс": [],
-#            "Время между данным и предыдущим, мкс": []}
-# info = pd.DataFrame(columns)
-#
-# for i in range(len(filaments[0])):
-#     filament_t = filaments[0][i]
-#     filament_f = filaments[1][i]
-#
-#     names = ["Филамент", "Не филамент"]
-#
-#     if filtered[i]:
-#         c = 0
-#         fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(8, 6))
-#         ax.set_title(f"""{names[c]} на участке [{filament_t.min()}, {filament_t.max()}]""")
-#         ax.plot(filament_t, filament_f, color=colors[c])
-#         plt.savefig(
-#             f"""{path_to_proj}data/{i} {names[c]} на участке [{filament_t.min()}, {filament_t.max()}].png""",
-#             dpi=120)
-#         plt.savefig(
-#             f"""{path_to_proj}data/tot/{i} {names[c]} на участке [{filament_t.min()}, {filament_t.max()}].png""",
-#             dpi=120)
-#         # plt.show()
-#         plt.close()
-#         detection_time = (filament_t.max() - filament_t.min()) / 2 + filament_t.min()
-#         shift_frequency = "Wait for updates..."
-#         filament_duration = round((filament_t.max() - filament_t.min()) * 1000)
-#         time_since_previous = subtract_last_detection_time(info, detection_time)
-#
-#         row = {"Время обнаружения филамента, мс": detection_time,
-#                "Частота допл. сдвига": shift_frequency,
-#                "Длительность филамента, мкс": filament_duration,
-#                "Время между данным и предыдущим, мкс": time_since_previous}
-#         info = pd.concat([info, pd.DataFrame([row])], ignore_index=True)
-#     else:
-#         c = 1
-#         fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(8, 6))
-#         ax.set_title(f"""{names[c]} на участке [{filament_t.min()}, {filament_t.max()}]""")
-#         ax.plot(filament_t, filament_f, color=colors[c])
-#         plt.savefig(
-#             f"""{path_to_proj}data/tot/{i} {names[c]} на участке [{filament_t.min()}, {filament_t.max()}].png""",
-#             dpi=120)
-#         # plt.show()
-#         plt.close()
-#     gc.collect()
-#
-# # info.to_excel(file[:-4] + ".xlsx", index=False)
-#
-# shutil.make_archive("data_tot", 'zip', path_to_proj + "data")
-# os.remove(path_to_proj + 'fil.dat')
 
 path_to_csv = "data_csv/"
 name_csv = f"{file[:-4]}_result_data.csv"
@@ -340,7 +281,7 @@ for i in range(len(filaments[0])):
         np.linspace(fragment_x[0], fragment_x[-1], signal_maxLength))
 
     # получение метки фрагмента: 1 - филамент, 0 - не филамент
-    fragment_mark = 1 if filtered[i] else 0
+    fragment_mark = round(predictions[i][0], 2)
 
     # добавление данных в Data Frame
     df.loc[-1] = [FILE_D_ID, fragment_mark, fragment_length, SIGNAL_RATE] + list(fragment_interpolate_values)  # adding a row
@@ -354,14 +295,14 @@ for i in range(len(filaments[0])):
 
     # обработка автоматического сохранения Data Frame
     fragments_count += 1
-    if fragment_mark == 0:
+    if fragment_mark < edge:
         noise_count += 1
     else:
         filaments_count += 1
         tot_filaments_mark += fragment_mark
     if fragments_count % 10 == 0:
         print(f"Количество сохранённых фрагментов: {fragments_count}\n" +
-              f"Филаментов: {filaments_count} (средняя оценка филаментов: {tot_filaments_mark / filaments_count})" +
+              f"Филаментов: {filaments_count} (средняя оценка филаментов: {round(tot_filaments_mark / filaments_count, 2)})" +
               f"\nНе филаментов: {noise_count}")
 
         if os.path.exists(path_to_csv) and os.path.exists(path_to_csv + name_csv):
@@ -395,7 +336,7 @@ if len(df.count(axis="rows")) > 0:
         df.to_csv(path_to_csv + file_fragments_csv_name, index=False)
 
 print(f"Количество сохранённых фрагментов: {fragments_count}\n" +
-      f"Филаментов: {filaments_count} (средняя оценка филаментов: {tot_filaments_mark / filaments_count})" +
+              f"Филаментов: {filaments_count} (средняя оценка филаментов: {round(tot_filaments_mark / filaments_count, 2)})" +
       f"\nНе филаментов: {noise_count}")
 
 os.remove(path_to_proj + 'fil.dat')

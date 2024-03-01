@@ -270,19 +270,16 @@ def f1_m(y_true, y_pred):
     return 2 * ((precision * recall) / (precision + recall + K.epsilon()))
 
 
-# %%
-neuro_filter = keras.models.load_model(path_to_proj + "cnn_bin_class_2.keras",
-                                       custom_objects={"focal_crossentropy": focal_crossentropy,
-                                                       "f1_m": f1_m,
-                                                       "precision_m": precision_m,
-                                                       "recall_m": recall_m})
-# scaler = joblib.load(path_to_proj + "scaler_for_neuro_filter.pkl")
+# neuro-filter
+name_filter = "cnn_bin_class_4"
+neuro_filter = keras.models.load_model(path_to_proj + f"models/{name_filter}.keras", safe_mode=False)
+predictions = neuro_filter.predict(fragments_smooth)
 
 # # Построение графика Количества отобраннных филаментов от величины граничной вероятности
 # edges = np.linspace(0, 1, 100)
 # fil_nums = []
 # for i in edges:
-#     filtered = neuro_filter.predict(fragments_smooth, verbose=0) > i
+#     filtered = predictions > i
 #     fil_nums.append(len(list(filter(lambda x: x, filtered))))
 #
 # fig, ax = plt.subplots()
@@ -294,7 +291,8 @@ neuro_filter = keras.models.load_model(path_to_proj + "cnn_bin_class_2.keras",
 # plt.clf()
 # gc.collect()
 
-filtered = neuro_filter.predict(fragments_smooth) >= 0.9
+edge = 0.9
+filtered = predictions >= edge
 
 print("==========================================")
 print(f"Количество найденных филаментов: {len(fragments[0])}")
@@ -305,8 +303,8 @@ print("==========================================")
 gc.collect()
 
 path_to_csv = "data_csv/"
-name_csv = f"new_{file[:-4]}_result_data.csv"
-file_fragments_csv_name = f"new_{file[:-4]}_result_fragments.csv"
+name_csv = f"new_{file[:-4]}_result_data_{name_filter}_v2.csv"
+file_fragments_csv_name = f"new_{file[:-4]}_result_fragments_{name_filter}_v2.csv"
 
 signal_maxLength = 512
 FILE_D_ID = file[:5]  # "00000"
@@ -344,12 +342,11 @@ for i in range(len(fragments[0])):
     fragment_interpolate_values = sc_i.interp1d(fragment_x, fragment_values, kind="quadratic")(
         np.linspace(fragment_x[0], fragment_x[-1], signal_maxLength))
 
-    # получение метки фрагмента: 1 - филамент, 0 - не филамент
-    fragment_mark = 1 if filtered[i] else 0
+    # получение метки фрагмента из прогнозированных данных
+    fragment_mark = round(predictions[i][0], 2)
 
     # добавление данных в Data Frame
-    df.loc[-1] = [FILE_D_ID, fragment_mark, fragment_length, SIGNAL_RATE] + list(
-        fragment_interpolate_values)  # adding a row
+    df.loc[-1] = [FILE_D_ID, fragment_mark, fragment_length, SIGNAL_RATE] + list(fragment_interpolate_values)  # adding a row
     df.index = df.index + 1  # shifting index
     df = df.sort_index()  # sorting by index
 
@@ -360,14 +357,14 @@ for i in range(len(fragments[0])):
 
     # обработка автоматического сохранения Data Frame
     fragments_count += 1
-    if fragment_mark == 0:
+    if fragment_mark < edge:
         noise_count += 1
     else:
         filaments_count += 1
         tot_filaments_mark += fragment_mark
     if fragments_count % 10 == 0:
         print(f"Количество сохранённых фрагментов: {fragments_count}\n" +
-              f"Филаментов: {filaments_count} (средняя оценка филаментов: {tot_filaments_mark / filaments_count})" +
+              f"Филаментов: {filaments_count} (средняя оценка филаментов: {round(tot_filaments_mark / filaments_count, 2)})" +
               f"\nНе филаментов: {noise_count}")
 
         if os.path.exists(path_to_csv) and os.path.exists(path_to_csv + name_csv):
@@ -401,7 +398,7 @@ if len(df.count(axis="rows")) > 0:
         df.to_csv(path_to_csv + file_fragments_csv_name, index=False)
 
 print(f"Количество сохранённых фрагментов: {fragments_count}\n" +
-      f"Филаментов: {filaments_count} (средняя оценка филаментов: {tot_filaments_mark / filaments_count})" +
+      f"Филаментов: {filaments_count} (средняя оценка филаментов: {round(tot_filaments_mark / filaments_count, 2)})" +
       f"\nНе филаментов: {noise_count}")
 
 os.remove(path_to_proj + 'fil.dat')
