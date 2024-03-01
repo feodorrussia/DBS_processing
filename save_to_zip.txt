@@ -1,0 +1,60 @@
+# if os.path.isdir(path_to_proj + "data/"):
+#     shutil.rmtree(path_to_proj + "data/")
+#     os.mkdir(path_to_proj + "data/")
+#     os.mkdir(path_to_proj + "data/tot/")
+# else:
+#     os.mkdir(path_to_proj + "data/")
+#     os.mkdir(path_to_proj + "data/tot/")
+#
+# # Создание пустой таблицы
+# columns = {"Время обнаружения филамента, мс": [],
+#            "Частота допл. сдвига": [],
+#            "Длительность филамента, мкс": [],
+#            "Время между данным и предыдущим, мкс": []}
+# info = pd.DataFrame(columns)
+#
+# for i in range(len(filaments[0])):
+#     filament_t = filaments[0][i]
+#     filament_f = filaments[1][i]
+#
+#     names = ["Филамент", "Не филамент"]
+#
+#     if filtered[i]:
+#         c = 0
+#         fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(8, 6))
+#         ax.set_title(f"""{names[c]} на участке [{filament_t.min()}, {filament_t.max()}]""")
+#         ax.plot(filament_t, filament_f, color=colors[c])
+#         plt.savefig(
+#             f"""{path_to_proj}data/{i} {names[c]} на участке [{filament_t.min()}, {filament_t.max()}].png""",
+#             dpi=120)
+#         plt.savefig(
+#             f"""{path_to_proj}data/tot/{i} {names[c]} на участке [{filament_t.min()}, {filament_t.max()}].png""",
+#             dpi=120)
+#         # plt.show()
+#         plt.close()
+#         detection_time = (filament_t.max() - filament_t.min()) / 2 + filament_t.min()
+#         shift_frequency = "Wait for updates..."
+#         filament_duration = round((filament_t.max() - filament_t.min()) * 1000)
+#         time_since_previous = subtract_last_detection_time(info, detection_time)
+#
+#         row = {"Время обнаружения филамента, мс": detection_time,
+#                "Частота допл. сдвига": shift_frequency,
+#                "Длительность филамента, мкс": filament_duration,
+#                "Время между данным и предыдущим, мкс": time_since_previous}
+#         info = pd.concat([info, pd.DataFrame([row])], ignore_index=True)
+#     else:
+#         c = 1
+#         fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(8, 6))
+#         ax.set_title(f"""{names[c]} на участке [{filament_t.min()}, {filament_t.max()}]""")
+#         ax.plot(filament_t, filament_f, color=colors[c])
+#         plt.savefig(
+#             f"""{path_to_proj}data/tot/{i} {names[c]} на участке [{filament_t.min()}, {filament_t.max()}].png""",
+#             dpi=120)
+#         # plt.show()
+#         plt.close()
+#     gc.collect()
+#
+# # info.to_excel(file[:-4] + ".xlsx", index=False)
+#
+# shutil.make_archive("data_tot", 'zip', path_to_proj + "data")
+# os.remove(path_to_proj + 'fil.dat')
