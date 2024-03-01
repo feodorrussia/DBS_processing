@@ -291,7 +291,7 @@ predictions = neuro_filter.predict(fragments_smooth)
 # plt.clf()
 # gc.collect()
 
-edge = 0.9
+edge = 0.75
 filtered = predictions >= edge
 
 print("==========================================")
@@ -303,13 +303,13 @@ print("==========================================")
 gc.collect()
 
 path_to_csv = "data_csv/"
-name_csv = f"new_{file[:-4]}_result_data_{name_filter}.csv"
-file_fragments_csv_name = f"new_{file[:-4]}_result_fragments_{name_filter}.csv"
+name_csv = f"new_{file[:-4]}_{name_filter}_result_data.csv"
+file_fragments_csv_name = f"new_{file[:-4]}_{name_filter}_result_fragments.csv"
 
 signal_maxLength = 512
 FILE_D_ID = file[:5]  # "00000"
 
-# %%
+
 df = pd.DataFrame(columns=(['D_ID', 'Y', 'Length', 'Rate'] + [str(i) for i in range(signal_maxLength)]))
 df_2 = pd.DataFrame(columns=(['Y', 'Left', 'Right', 'Rate']))
 
@@ -377,9 +377,9 @@ for i in range(len(fragments[0])):
         df = df.iloc[0:0]
 
         if os.path.exists(path_to_csv) and os.path.exists(path_to_csv + file_fragments_csv_name):
-            df.to_csv(path_to_csv + file_fragments_csv_name, mode='a', header=False, index=False)
+            df_2.to_csv(path_to_csv + file_fragments_csv_name, mode='a', header=False, index=False)
         else:
-            df.to_csv(path_to_csv + file_fragments_csv_name, index=False)
+            df_2.to_csv(path_to_csv + file_fragments_csv_name, index=False)
         # очистка Data Frame
         df_2 = df_2.iloc[0:0]
 
@@ -393,12 +393,13 @@ if len(df.count(axis="rows")) > 0:
         df.to_csv(path_to_csv + name_csv, index=False)
 
     if os.path.exists(path_to_csv) and os.path.exists(path_to_csv + file_fragments_csv_name):
-        df.to_csv(path_to_csv + file_fragments_csv_name, mode='a', header=False, index=False)
+        df_2.to_csv(path_to_csv + file_fragments_csv_name, mode='a', header=False, index=False)
     else:
-        df.to_csv(path_to_csv + file_fragments_csv_name, index=False)
+        df_2.to_csv(path_to_csv + file_fragments_csv_name, index=False)
 
 print(f"Количество сохранённых фрагментов: {fragments_count}\n" +
       f"Филаментов: {filaments_count} (средняя оценка филаментов: {round(tot_filaments_mark / filaments_count, 2)})" +
       f"\nНе филаментов: {noise_count}")
 
 os.remove(path_to_proj + 'fil.dat')
+gc.collect()

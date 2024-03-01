@@ -315,9 +315,9 @@ for i in range(len(filaments[0])):
         df = df.iloc[0:0]
 
         if os.path.exists(path_to_csv) and os.path.exists(path_to_csv + file_fragments_csv_name):
-            df.to_csv(path_to_csv + file_fragments_csv_name, mode='a', header=False, index=False)
+            df_2.to_csv(path_to_csv + file_fragments_csv_name, mode='a', header=False, index=False)
         else:
-            df.to_csv(path_to_csv + file_fragments_csv_name, index=False)
+            df_2.to_csv(path_to_csv + file_fragments_csv_name, index=False)
         # очистка Data Frame
         df_2 = df_2.iloc[0:0]
 
@@ -331,9 +331,9 @@ if len(df.count(axis="rows")) > 0:
         df.to_csv(path_to_csv + name_csv, index=False)
 
     if os.path.exists(path_to_csv) and os.path.exists(path_to_csv + file_fragments_csv_name):
-        df.to_csv(path_to_csv + file_fragments_csv_name, mode='a', header=False, index=False)
+        df_2.to_csv(path_to_csv + file_fragments_csv_name, mode='a', header=False, index=False)
     else:
-        df.to_csv(path_to_csv + file_fragments_csv_name, index=False)
+        df_2.to_csv(path_to_csv + file_fragments_csv_name, index=False)
 
 print(f"Количество сохранённых фрагментов: {fragments_count}\n" +
               f"Филаментов: {filaments_count} (средняя оценка филаментов: {round(tot_filaments_mark / filaments_count, 2)})" +
