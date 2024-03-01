@@ -66,7 +66,7 @@ def subtract_last_detection_time(df, detection_time):
 
 # %%
 
-path_to_proj = ""  # Plasma_processing/
+path_to_proj = "Plasma_processing/"  # Plasma_processing/
 
 for i in os.listdir():
     if i[-4:] == ".dat" and i != "fil.dat":
