@@ -248,8 +248,8 @@ FILE_D_ID = file[:5]  # "00000"
 SIGNAL_RATE = 4
 
 
-df = pd.DataFrame(columns=(['D_ID', 'Y', 'Length', 'Rate'] + [str(i) for i in range(signal_maxLength)]))
-df_2 = pd.DataFrame(columns=(['Y', 'Left', 'Right', 'Rate']))
+df = pd.DataFrame(columns=(['D_ID', 'Ch', 'Y', 'Length', 'Rate'] + [str(i) for i in range(signal_maxLength)]))
+df_2 = pd.DataFrame(columns=(['Ch', 'Y', 'Left', 'Right', 'Rate']))
 
 #
 fragments_count = 0
@@ -284,12 +284,14 @@ for i in range(len(filaments[0])):
     fragment_mark = round(predictions[i][0], 2)
 
     # добавление данных в Data Frame
-    df.loc[-1] = [FILE_D_ID, fragment_mark, fragment_length, SIGNAL_RATE] + list(fragment_interpolate_values)  # adding a row
+    df.loc[-1] = [FILE_D_ID, selected_channel, fragment_mark, fragment_length, SIGNAL_RATE] + list(
+        fragment_interpolate_values)  # adding a row
     df.index = df.index + 1  # shifting index
     df = df.sort_index()  # sorting by index
 
     # добавление данных в Data Frame 2
-    df_2.loc[-1] = [fragment_mark, min(fragment_range), max(fragment_range), SIGNAL_RATE]  # adding a row
+    df_2.loc[-1] = [selected_channel, fragment_mark, min(fragment_range), max(fragment_range),
+                    SIGNAL_RATE]  # adding a row
     df_2.index = df_2.index + 1  # shifting index
     df_2 = df_2.sort_index()  # sorting by index
 
