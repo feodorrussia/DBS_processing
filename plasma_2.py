@@ -1,26 +1,21 @@
+import gc
+import os
+
+import keras
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
-from scipy import interpolate
-from scipy.stats import skew
-from scipy import signal
-import joblib
-import keras
-import tensorflow as tf
-import os
-import shutil
-import gc
-from keras import backend as K
 import scipy.interpolate as sc_i
+from keras import backend as K
+from scipy import interpolate
+from scipy import signal
+from scipy.stats import skew
 
 
-# %%
 def x_in_y(query, base):
     """
     The function returns the index of the subsequence in the sequence
-
-    query: list - subsequence
-    base: list - sequence
+    :param query: list - subsequence
+    :param base: list - sequence
     """
     try:
         l = len(query)
@@ -34,45 +29,19 @@ def x_in_y(query, base):
     return False
 
 
-def calculate_doppler_shift_frequency(signal, sample_rate):
-    # Вычисление автокорреляции сигнала
-    autocorr = np.correlate(signal, signal, mode='full')
+path_to_proj = ""  # Plasma_processing/
+path_to_csv = "data_csv/"  #
 
-    # Нахождение положительного пика автокорреляции (больше нуля)
-    positive_peaks = np.where(autocorr > 0)[0]
+if not os.path.exists(path_to_csv):
+    os.mkdir(path_to_csv)
 
-    # Нахождение первого положительного пика, отличного от нуля
-    peak_index = positive_peaks[0] if positive_peaks.any() else None
+file_path = input("Введите имя файла. Доступные файлы:\n" + "\n".join(
+    list(filter(lambda x: '.dat' in x or '.txt' in x, os.listdir(path_to_csv)))) + "\n")
+file_name = file_path.split('/')[-1]
 
-    if peak_index is not None:
-        # Вычисление частоты Доплеровского сдвига
-        frequency_bins = len(signal) * 2  # Количество бинов в автокорреляции
-        doppler_shift_frequency = (peak_index - len(signal)) / (2.0 * len(signal)) * sample_rate / frequency_bins
-    else:
-        doppler_shift_frequency = None
+file_fragments_csv_name = file_path[:-4] + "_fragments.csv"
 
-    return doppler_shift_frequency
-
-
-def subtract_last_detection_time(df, detection_time):
-    if len(df) > 0:
-        last_detection_time = df.iloc[-1]["Время обнаружения филамента, мс"]
-        result = round((detection_time - last_detection_time) * 1000)
-    else:
-        # Handle the case when the DataFrame is empty
-        result = None
-    return result
-
-
-# %%
-
-path_to_proj = "Plasma_processing/"  # Plasma_processing/
-
-for i in os.listdir():
-    if i[-4:] == ".dat" and i != "fil.dat":
-        file = i
-
-with open(file, 'r') as f:
+with open(file_path, 'r') as f:
     lines = f.readlines()
 
 # удаляем первую строку
@@ -113,7 +82,7 @@ gc.collect()
 # Загрузка всех столбцов из файла
 data = pd.read_table(path_to_proj + "fil.dat", sep=" ", names=["t"] + ["ch{}".format(i) for i in range(1, 300)])
 
-print(f"Выбран файл {file}")
+print(f"Выбран файл {file_path}")
 # Предложение пользователю выбрать канал
 available_channels = [col for col in data.columns if col != "t" and str(data[col][0]) != 'nan']
 # print("Доступные каналы:", ', '.join(available_channels))
@@ -271,13 +240,14 @@ def f1_m(y_true, y_pred):
 
 
 # neuro-filter
-name_filter = "cnn_bin_class_2"
-neuro_filter = keras.models.load_model(path_to_proj + f"models/{name_filter}.keras",
-                                       custom_objects={"focal_crossentropy": focal_crossentropy,
-                                                       "f1_m": f1_m,
-                                                       "precision_m": precision_m,
-                                                       "recall_m": recall_m})  # safe_mode=False
+name_filter = "cnn_bin_class_4"
+neuro_filter = keras.models.load_model(path_to_proj + f"models/{name_filter}.keras", safe_mode=False)  #
 predictions = neuro_filter.predict(fragments_smooth)
+
+# custom_objects={"focal_crossentropy": focal_crossentropy,
+#                                                        "f1_m": f1_m,
+#                                                        "precision_m": precision_m,
+#                                                        "recall_m": recall_m}
 
 # # Построение графика Количества отобраннных филаментов от величины граничной вероятности
 # edges = np.linspace(0, 1, 100)
@@ -306,13 +276,14 @@ print("==========================================")
 
 gc.collect()
 
-path_to_csv = ""  # data_csv/
-name_csv = f"new_{file[:-4]}_{name_filter}_result_data.csv"
-file_fragments_csv_name = f"new_{file[:-4]}_{name_filter}_result_fragments.csv"
+if not os.path.exists(path_to_csv + "result_data/"):
+    os.mkdir(path_to_csv + "result_data/")
+
+name_csv = f"new_{file_name[:-4]}_{name_filter}_result_data.csv"
+file_fragments_csv_name = f"new_{file_name[:-4]}_{name_filter}_result_fragments.csv"
 
 signal_maxLength = 512
-FILE_D_ID = file[:5]  # "00000"
-
+FILE_D_ID = file_name[:5]  # "00000"
 
 df = pd.DataFrame(columns=(['D_ID', 'Ch', 'Y', 'Length', 'Rate'] + [str(i) for i in range(signal_maxLength)]))
 df_2 = pd.DataFrame(columns=(['Ch', 'Y', 'Left', 'Right', 'Rate']))
@@ -350,12 +321,14 @@ for i in range(len(fragments[0])):
     fragment_mark = round(predictions[i][0], 2)
 
     # добавление данных в Data Frame
-    df.loc[-1] = [FILE_D_ID, selected_channel, fragment_mark, fragment_length, SIGNAL_RATE] + list(fragment_interpolate_values)  # adding a row
+    df.loc[-1] = [FILE_D_ID, selected_channel, fragment_mark, fragment_length, SIGNAL_RATE] + list(
+        fragment_interpolate_values)  # adding a row
     df.index = df.index + 1  # shifting index
     df = df.sort_index()  # sorting by index
 
     # добавление данных в Data Frame 2
-    df_2.loc[-1] = [selected_channel, fragment_mark, min(fragment_range), max(fragment_range), SIGNAL_RATE]  # adding a row
+    df_2.loc[-1] = [selected_channel, fragment_mark, min(fragment_range), max(fragment_range),
+                    SIGNAL_RATE]  # adding a row
     df_2.index = df_2.index + 1  # shifting index
     df_2 = df_2.sort_index()  # sorting by index
 
@@ -367,9 +340,9 @@ for i in range(len(fragments[0])):
         filaments_count += 1
         tot_filaments_mark += fragment_mark
     if fragments_count % 10 == 0:
-        print(f"Количество сохранённых фрагментов: {fragments_count}\n" +
-              f"Филаментов: {filaments_count} (средняя оценка филаментов: {round(tot_filaments_mark / filaments_count, 2)})" +
-              f"\nНе филаментов: {noise_count}")
+        # print(f"Количество сохранённых фрагментов: {fragments_count}\n" +
+        #       f"Филаментов: {filaments_count} (средняя оценка филаментов: {round(tot_filaments_mark / (filaments_count+1), 2)})" +
+        #       f"\nНе филаментов: {noise_count}")
 
         if os.path.exists(path_to_csv) and os.path.exists(path_to_csv + name_csv):
             df.to_csv(path_to_csv + name_csv, mode='a', header=False, index=False)
@@ -402,7 +375,7 @@ if len(df.count(axis="rows")) > 0:
         df_2.to_csv(path_to_csv + file_fragments_csv_name, index=False)
 
 print(f"Количество сохранённых фрагментов: {fragments_count}\n" +
-      f"Филаментов: {filaments_count} (средняя оценка филаментов: {round(tot_filaments_mark / filaments_count, 2)})" +
+      f"Филаментов: {filaments_count} (средняя оценка филаментов: {round(tot_filaments_mark / (filaments_count + 1), 2)})" +
       f"\nНе филаментов: {noise_count}")
 
 os.remove(path_to_proj + 'fil.dat')

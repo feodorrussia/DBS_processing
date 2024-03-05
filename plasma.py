@@ -33,43 +33,19 @@ def x_in_y(query, base):
     return False
 
 
-def calculate_doppler_shift_frequency(signal, sample_rate):
-    # Вычисление автокорреляции сигнала
-    autocorr = np.correlate(signal, signal, mode='full')
-
-    # Нахождение положительного пика автокорреляции (больше нуля)
-    positive_peaks = np.where(autocorr > 0)[0]
-
-    # Нахождение первого положительного пика, отличного от нуля
-    peak_index = positive_peaks[0] if positive_peaks.any() else None
-
-    if peak_index is not None:
-        # Вычисление частоты Доплеровского сдвига
-        frequency_bins = len(signal) * 2  # Количество бинов в автокорреляции
-        doppler_shift_frequency = (peak_index - len(signal)) / (2.0 * len(signal)) * sample_rate / frequency_bins
-    else:
-        doppler_shift_frequency = None
-
-    return doppler_shift_frequency
-
-
-def subtract_last_detection_time(df, detection_time):
-    if len(df) > 0:
-        last_detection_time = df.iloc[-1]["Время обнаружения филамента, мс"]
-        result = round((detection_time - last_detection_time) * 1000)
-    else:
-        # Handle the case when the DataFrame is empty
-        result = None
-    return result
-
-
 path_to_proj = "Plasma_processing/"  # Plasma_processing/
+path_to_csv = ""  # data_csv/
 
-for i in os.listdir():
-    if i[-4:] == ".dat" and i != "fil.dat":
-        file = i
+if not os.path.exists(path_to_csv):
+    os.mkdir(path_to_csv)
 
-with open(file, 'r') as f:
+file_path = input("Введите имя файла. Доступные файлы:\n" + "\n".join(
+    list(filter(lambda x: '.dat' in x or '.txt' in x, os.listdir(path_to_csv)))) + "\n")
+file_name = file_path.split('/')[-1]
+
+file_fragments_csv_name = file_path[:-4] + "_fragments.csv"
+
+with open(file_path, 'r') as f:
     lines = f.readlines()
 
 # удаляем первую строку
@@ -110,7 +86,7 @@ gc.collect()
 # Загрузка всех столбцов из файла
 data = pd.read_table(path_to_proj + "fil.dat", sep=" ", names=["t"] + ["ch{}".format(i) for i in range(1, 300)])
 
-print(f"Выбран файл {file}")
+print(f"Выбран файл {file_path}")
 # Предложение пользователю выбрать канал
 available_channels = [col for col in data.columns if col != "t" and str(data[col][0]) != 'nan']
 print("Доступные каналы:", ', '.join(available_channels))
@@ -239,12 +215,16 @@ print("==========================================")
 
 gc.collect()
 
-path_to_csv = ""  # data_csv/
-name_csv = f"{file[:-4]}_result_data.csv"
-file_fragments_csv_name = f"{file[:-4]}_result_fragments.csv"
+if not os.path.exists(path_to_csv):
+    os.mkdir(path_to_csv)
+if not os.path.exists(path_to_csv + "result_data/"):
+    os.mkdir(path_to_csv + "result_data/")
+
+name_csv = f"result_data/{file_path[:-4]}_result_data.csv"
+file_fragments_csv_name = f"result_fragments/{file_path[:-4]}_result_fragments.csv"
 
 signal_maxLength = 512
-FILE_D_ID = file[:5]  # "00000"
+FILE_D_ID = file_path[:5]  # "00000"
 SIGNAL_RATE = 4
 
 
@@ -310,8 +290,6 @@ for i in range(len(filaments[0])):
         if os.path.exists(path_to_csv) and os.path.exists(path_to_csv + name_csv):
             df.to_csv(path_to_csv + name_csv, mode='a', header=False, index=False)
         else:
-            if not os.path.exists(path_to_csv):
-                os.mkdir(path_to_csv)
             df.to_csv(path_to_csv + name_csv, index=False)
         # очистка Data Frame
         df = df.iloc[0:0]
@@ -328,8 +306,6 @@ if len(df.count(axis="rows")) > 0:
     if os.path.exists(path_to_csv) and os.path.exists(path_to_csv + name_csv):
         df.to_csv(path_to_csv + name_csv, mode='a', header=False, index=False)
     else:
-        if not os.path.exists(path_to_csv):
-            os.mkdir(path_to_csv)
         df.to_csv(path_to_csv + name_csv, index=False)
 
     if os.path.exists(path_to_csv) and os.path.exists(path_to_csv + file_fragments_csv_name):
