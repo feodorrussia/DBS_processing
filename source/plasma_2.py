@@ -30,7 +30,7 @@ def x_in_y(query, base):
 
 
 path_to_proj = ""  # Plasma_processing/
-path_to_csv = "data_csv/"  #
+path_to_csv = "../data_csv/"  #
 
 if not os.path.exists(path_to_csv):
     os.mkdir(path_to_csv)

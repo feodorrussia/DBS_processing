@@ -65,7 +65,9 @@ def fft_butter_skewness_filtering(x_data, signal_data):
     preprocessed = ";".join(map(str, signal_data_f)).split("0.0;" * TOLERANCE)
     preprocessed = [i.split(";") for i in preprocessed if len(i) > 1]
     for i in range(len(preprocessed)):
-        preprocessed[i] = [float(j) for j in preprocessed[i] if j != ""]
+        # print(preprocessed[i] if "-" in preprocessed[i] else "", end="")
+        preprocessed[i] = [float(j) for j in preprocessed[i] if j != "" and j != "-"]
+    # print(1)
     filtered_data = np.array([i for i in preprocessed if len(i) > MIN_LENGTH], dtype="object")
 
     for i in range(len(filtered_data)):
@@ -87,7 +89,7 @@ def fft_butter_skewness_filtering(x_data, signal_data):
         if k > MIN_PERIODS * 2 and abs_skewness < SINUSOIDALITY:
             r = x_in_y(filtered_data[i][:5].tolist(), signal_data.tolist())
             x_id = np.array(
-                list(range(r - BOARDERS_PERCENT * filtered_data[i].shape[0], r + (BOARDERS_PERCENT + 1) * filtered_data[i].shape[0])))
+                list(range(r - int(BOARDERS_PERCENT * filtered_data[i].shape[0]), r + int((BOARDERS_PERCENT + 1) * filtered_data[i].shape[0]))))
 
             fragments[0].append(x_data[x_id])
             fragments[1].append(signal_data[x_id])
@@ -124,6 +126,11 @@ def data_converting_CNN(fragments, rate=4, to_len=512):
     fragments_meta = []
 
     for i in range(len(fragments[0])):
+        if len(fragments[0][i]) <= 5 or len(fragments[0][i]) >= 500:
+            print("===== Warning =====")
+            # запрос команды подтверждения
+            print(f"Фрагмент {i} содержит меньше 5 или больше 500 точек ({len(fragments[0][i])} точек)")
+
         norm_signal_fragment, norm_meta_data = fragment_smoothing_preproc(fragments[0][i], fragments[1][i],
                                                                           rate, to_len)
 

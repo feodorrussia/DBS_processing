@@ -1,7 +1,17 @@
 import os
+
 import numpy as np
 import pandas as pd
 import scipy.interpolate as sc_i
+
+
+def clear_space(line):
+    len_l = len(line)
+    line = line.replace("  ", " ")
+    while len_l > len(line):
+        len_l = len(line)
+        line = line.replace("  ", " ")
+    return line
 
 
 def read_dataFile(file_path, path_to_proj):
@@ -10,33 +20,18 @@ def read_dataFile(file_path, path_to_proj):
 
     # удаляем первую строку
     lines.pop(0)
-    # удаляем последние 4 строки
-    lines = lines[:-4]
-    # удаляем 4 пробела в начале каждой строки
-    lines = [line[4:] if line.startswith('    ') else line for line in lines]
-    # заменяем двойные пробелы на одинарные
-    lines = [line.replace('  ', ' ') for line in lines]
-
-    with open(path_to_proj + 'fil.dat', 'w') as f:
-        f.writelines(lines)
-
-    with open(path_to_proj + 'fil.dat', 'r') as f:
-        lines = f.readlines()
-
-    # удаляем первую строку
-    lines.pop(0)
     # удаляем последние 14 строк (с запасом, чтобы не было мусора)
     lines = lines[:-14]
-    # удаляем 4 пробела в начале каждой строки
-    lines = [line[4:] if line.startswith('    ') else line for line in lines]
-    # заменяем двойные пробелы на одинарные
-    lines = [line.replace('  ', ' ') for line in lines]
+    # удаляем пробелы в начале и конце каждой строки
+    lines = [line.strip() + "\n" for line in lines]
+    # чистим пробелы
+    lines = list(map(clear_space, lines))
 
     with open(path_to_proj + 'fil.dat', 'w') as f:
         f.writelines(lines)
 
     # Загрузка всех столбцов из файла
-    data = pd.read_table(path_to_proj + "fil.dat", sep=" ", names=["t"] + ["ch{}".format(i) for i in range(1, 300)])
+    data = pd.read_table(path_to_proj + "fil.dat", sep=" ", names=["t"] + ["ch{}".format(i) for i in range(1, 30)])
 
     os.remove(path_to_proj + 'fil.dat')
 
@@ -52,7 +47,8 @@ def save_df_toFile(df, name_csv, path_to_csv=""):
         df.to_csv(path_to_csv + name_csv, index=False)
 
 
-def save_results_toFiles(predictions, fragments, file_data_csv_name, file_fragments_csv_name, meta_data, path_to_csv="", edge=0.5, signal_maxLength=512):
+def save_results_toFiles(predictions, fragments, file_data_csv_name, file_fragments_csv_name, meta_data, path_to_csv="",
+                         edge=0.5, signal_maxLength=512):
     """
     :param predictions:
     :param fragments:
@@ -73,8 +69,8 @@ def save_results_toFiles(predictions, fragments, file_data_csv_name, file_fragme
     noise_count = 0
 
     for i in range(len(fragments[0])):
-        fragment_x = fragments[0][i].to_list()
-        fragment_values = fragments[1][i].to_list()
+        fragment_x = fragments[0][i].tolist()
+        fragment_values = fragments[1][i].tolist()
 
         # получение границ фрагмента из введённой строки
         fragment_range = [min(fragment_x), max(fragment_x)]
