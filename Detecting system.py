@@ -8,8 +8,8 @@ from Files_operating import read_dataFile, save_results_toFiles
 from source.NN_enviroments import *
 from source.Signal_processing import fft_butter_skewness_filtering, data_converting_CNN
 
-path_to_proj = ""  # Plasma_processing/
-path_to_csv = "data_csv/"  #
+path_to_proj = input("Введите путь к запускаемому файлу (Plasma_processing/): ")
+path_to_csv = input("Введите путь к файлам с данными относительно запускаемого файла (data_csv/): ")
 
 if not os.path.exists(path_to_csv):
     os.mkdir(path_to_csv)
