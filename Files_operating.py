@@ -48,7 +48,7 @@ def save_df_toFile(df, name_csv, path_to_csv=""):
 
 
 def save_results_toFiles(predictions, fragments, file_data_csv_name, file_fragments_csv_name, meta_data, path_to_csv="",
-                         edge=0.5, signal_maxLength=512):
+                         edge=0.5, signal_maxLength=512, f_save_all=True):
     """
     :param predictions:
     :param fragments:
@@ -94,20 +94,22 @@ def save_results_toFiles(predictions, fragments, file_data_csv_name, file_fragme
         # получение метки фрагмента из прогнозированных данных
         fragment_mark = round(predictions[i][0], 2)
 
-        # добавление данных в Data Frame
-        df.loc[-1] = [meta_data["id"], meta_data["ch"], fragment_mark, fragment_length, meta_data["rate"]] + list(
-            fragment_interpolate_values)  # adding a row
-        df.index = df.index + 1  # shifting index
-        df = df.sort_index()  # sorting by index
+        if f_save_all or fragment_mark >= edge:
+            fragments_count += 1
 
-        # добавление данных в Data Frame 2
-        df_2.loc[-1] = [meta_data["ch"], fragment_mark, min(fragment_range), max(fragment_range),
-                        meta_data["rate"]]  # adding a row
-        df_2.index = df_2.index + 1  # shifting index
-        df_2 = df_2.sort_index()  # sorting by index
+            # добавление данных в Data Frame
+            df.loc[-1] = [meta_data["id"], meta_data["ch"], fragment_mark, fragment_length, meta_data["rate"]] + list(
+                fragment_interpolate_values)  # adding a row
+            df.index = df.index + 1  # shifting index
+            df = df.sort_index()  # sorting by index
+
+            # добавление данных в Data Frame 2
+            df_2.loc[-1] = [meta_data["ch"], fragment_mark, min(fragment_range), max(fragment_range),
+                            meta_data["rate"]]  # adding a row
+            df_2.index = df_2.index + 1  # shifting index
+            df_2 = df_2.sort_index()  # sorting by index
 
         # обработка автоматического сохранения Data Frame
-        fragments_count += 1
         if fragment_mark < edge:
             noise_count += 1
         else:
