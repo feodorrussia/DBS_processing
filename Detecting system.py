@@ -72,7 +72,7 @@ print("#log: Данные фрагментов нормализованы и п�
 gc.collect()
 
 # neuro-filter
-name_filters = ["cnn_bin_class_11"]
+name_filters = ["cnn_bin_class_11"]  # "auto_bin_class_8", "auto_bin_class_11", "cnn_bin_class_4", "cnn_bin_class_10",
 for name_filter in name_filters:
     neuro_filter = load_model(path_to_proj + f"models/{name_filter}.keras", safe_mode=False,
                               custom_objects={"focal_loss": focal_loss,
@@ -84,6 +84,7 @@ for name_filter in name_filters:
                                               "recall_m": recall_m})
 
     # log
+    print("#log: Версия фильтра:", name_filter)
     print("#log: Запуск фильтра. Прогнозирование:")
     start = time.time()
     predictions = neuro_filter.predict(fragments_smooth, verbose=1)
