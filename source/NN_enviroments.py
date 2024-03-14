@@ -19,6 +19,32 @@ def focal_crossentropy(y_true, y_pred):
     return K.mean(alpha_factor * modulating_factor * bce, axis=-1)
 
 
+def focal_loss(y_true, y_pred, alpha=0.25, gamma=2.0):
+    bce = K.binary_crossentropy(y_true, y_pred)
+
+    y_pred = K.clip(y_pred, K.epsilon(), 1. - K.epsilon())
+    p_t = (y_true * y_pred) + ((1 - y_true) * (1 - y_pred))
+
+    alpha_factor = y_true * alpha + ((1 - alpha) * (1 - y_true))
+    modulating_factor = K.pow((1 - p_t), gamma)
+
+    # compute the final loss and return
+    return K.mean(alpha_factor * modulating_factor * bce, axis=-1)
+
+
+def focal_loss_01(y_true, y_pred, alpha=0.1, gamma=2.0):
+    bce = K.binary_crossentropy(y_true, y_pred)
+
+    y_pred = K.clip(y_pred, K.epsilon(), 1. - K.epsilon())
+    p_t = (y_true * y_pred) + ((1 - y_true) * (1 - y_pred))
+
+    alpha_factor = y_true * alpha + ((1 - alpha) * (1 - y_true))
+    modulating_factor = K.pow((1 - p_t), gamma)
+
+    # compute the final loss and return
+    return K.mean(alpha_factor * modulating_factor * bce, axis=-1)
+
+
 # Metrics function
 def recall_m(y_true, y_pred):
     true_positives = K.sum(K.round(K.clip(y_true * y_pred, 0, 1)))
@@ -38,6 +64,12 @@ def f1_m(y_true, y_pred):
     precision = precision_m(y_true, y_pred)
     recall = recall_m(y_true, y_pred)
     return 2 * ((precision * recall) / (precision + recall + K.epsilon()))
+
+
+def f_m(y_true, y_pred, b=1):
+    precision = precision_m(y_true, y_pred)  # y_true
+    recall = recall_m(y_true, y_pred)  # y_pred
+    return (1 + b ** 2) * ((precision * recall) / (b ** 2 * precision + recall + K.epsilon()))
 
 
 # Построение графика Количества отобраннных филаментов от величины граничной вероятности
