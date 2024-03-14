@@ -72,53 +72,63 @@ print("#log: Данные фрагментов нормализованы и п�
 gc.collect()
 
 # neuro-filter
-name_filter = "cnn_bin_class_4"
-neuro_filter = load_model(path_to_proj + f"models/{name_filter}.keras", safe_mode=False,
-                          custom_objects={"focal_crossentropy": focal_crossentropy,
-                                          "f1_m": f1_m,
-                                          "precision_m": precision_m,
-                                          "recall_m": recall_m})
+name_filters = ["cnn_bin_class_11"]
+for name_filter in name_filters:
+    neuro_filter = load_model(path_to_proj + f"models/{name_filter}.keras", safe_mode=False,
+                              custom_objects={"focal_loss": focal_loss,
+                                              "focal_loss_01": focal_loss_01,
+                                              "focal_crossentropy": focal_crossentropy,
+                                              "f_m": f_m,
+                                              "f1_m": f1_m,
+                                              "precision_m": precision_m,
+                                              "recall_m": recall_m})
 
-# log
-print("#log: Запуск фильтра. Прогнозирование:")
-start = time.time()
-predictions = neuro_filter.predict(fragments_smooth, verbose=1)
-# log
-print(f"#log: Обработка завершена. Tooks - {round(time.time() - start, 5) * 1000} ms.\n")
+    # log
+    print("#log: Запуск фильтра. Прогнозирование:")
+    start = time.time()
+    predictions = neuro_filter.predict(fragments_smooth, verbose=1)
+    # log
+    print(f"#log: Обработка завершена. Tooks - {round(time.time() - start, 5) * 1000} ms.\n")
 
-gc.collect()
+    gc.collect()
 
-edge = 0.75
+    edge = 0.75
 
-f_plot = input("\nВедите у, чтобы отобразить кривую распределения результатов: ")
-if f_plot.lower() in ["y", "у"]:
-    plot_predictionCurve(predictions)
+    f_plot = input("\nВедите у, чтобы отобразить кривую распределения результатов: ")
+    if f_plot.lower() in ["y", "у", "e", "н"]:
+        plot_predictionCurve(predictions)
     edge = float(input("\nВедите граничное значение для оценки филаментов (разделитель - '.'): "))
 
-filtered = predictions >= edge
-# log
-print(f"\n#log: Обработка завершена. Проведена оценка с границей: {edge}")
+    filtered = predictions >= edge
+    # log
+    print(f"\n#log: Обработка завершена. Проведена оценка с границей: {edge}")
 
-# log
-print("==========================================")
-print(f"#log: Количество спрогнозированных филаментов: {len(list(filter(lambda x: x, filtered)))}")
-print("==========================================")
+    # log
+    print("==========================================")
+    print(f"#log: Количество спрогнозированных филаментов: {len(list(filter(lambda x: x, filtered)))}")
+    print("==========================================")
 
-if not os.path.exists(path_to_csv + "result_data/"):
-    os.mkdir(path_to_csv + "result_data/")
-if not os.path.exists(path_to_csv + "result_fragments/"):
-    os.mkdir(path_to_csv + "result_fragments/")
+    f_save = input("\nВедите у, чтобы сохранить все фрагменты (без фильтрации по оценке): ")
+    f_save_all = False
+    add_name_str = "fil_"
+    if f_save.lower() in ["y", "у", "e", "н"]:
+        f_save_all = True
+        add_name_str = "all_"
 
-data_csv_name = f"result_data/new_{file_name[:-4]}_{name_filter}_result_data.csv"
-fragments_csv_name = f"result_fragments/new_{file_name[:-4]}_{name_filter}_result_fragments.csv"
+    if not os.path.exists(path_to_csv + "result_data/"):
+        os.mkdir(path_to_csv + "result_data/")
+    if not os.path.exists(path_to_csv + "result_fragments/"):
+        os.mkdir(path_to_csv + "result_fragments/")
 
-# log
-print("#log: Сохранение результатов.")
-start = time.time()
-save_results_toFiles(predictions, fragments, data_csv_name, fragments_csv_name, signal_meta,
-                     path_to_csv=path_to_proj + path_to_csv, edge=edge)
-# log
-print(f"#log: Результаты сохранены. Tooks - {round(time.time() - start, 2) * 1} s. Файлы:\n" +
-      f"{path_to_proj + path_to_csv + data_csv_name}\n{path_to_proj + path_to_csv + fragments_csv_name}")
+    data_csv_name = f"result_data/new_{file_name[:-4]}_{name_filter}_result_{add_name_str}data.csv"
+    fragments_csv_name = f"result_fragments/new_{file_name[:-4]}_{name_filter}_result_{add_name_str}fragments.csv"
 
-gc.collect()
+    # log
+    print("#log: Сохранение результатов.")
+    start = time.time()
+    save_results_toFiles(predictions, fragments, data_csv_name, fragments_csv_name, signal_meta,
+                         path_to_csv=path_to_proj + path_to_csv, edge=edge, f_save_all=f_save_all)
+    # log
+    print(f"#log: Результаты сохранены. Tooks - {round(time.time() - start, 2) * 1} s. Файлы:\n" +
+          f"{path_to_proj + path_to_csv + data_csv_name}\n{path_to_proj + path_to_csv + fragments_csv_name}\n")
+    gc.collect()
