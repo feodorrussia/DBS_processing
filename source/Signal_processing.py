@@ -66,25 +66,29 @@ def lenght_preproc(preproc_fragments, rate,
     :param MAX_LENGTH_MCS: =0.008 mcs, < delete
     :param MIN_LENGTH_MCS: =0.035 mcs, > shred
     :param SHRED_LENGTH_MCS: =0.025 mcs, length of shredding fragments
-    :return: np.array()
+    :return: np.array(np.array(float))
     """
     result_fragments = []
 
     for fragment in preproc_fragments:
         frag_len = length_frag(len(fragment), rate)
         if MAX_LENGTH_MCS >= frag_len >= MIN_LENGTH_MCS:
-            result_fragments.append(fragment)
+            result_fragments.append(np.array(fragment))
         elif MAX_LENGTH_MCS <= frag_len:
             n_cuts, cut_step = shred_param_calc(len(fragment), points_frag(SHRED_LENGTH_MCS, rate))
-            print(n_cuts, cut_step, points_frag(SHRED_LENGTH_MCS, rate), len(fragment), n_cuts * cut_step,
-                  n_cuts * points_frag(SHRED_LENGTH_MCS, rate),
-                  abs(len(fragment) - n_cuts * points_frag(SHRED_LENGTH_MCS, rate)) / len(fragment))
+            # print(n_cuts, cut_step, points_frag(SHRED_LENGTH_MCS, rate), len(fragment), n_cuts * cut_step,
+            #       n_cuts * points_frag(SHRED_LENGTH_MCS, rate),
+            #       abs(len(fragment) - n_cuts * points_frag(SHRED_LENGTH_MCS, rate)) / len(fragment))
             for i in range(n_cuts):
-                result_fragments.append(fragment[i * cut_step:min((i + 1) * cut_step, len(fragment) - 1)])
+                result_fragments.append(np.array(fragment[i * cut_step:min((i + 1) * cut_step, len(fragment) - 1)]))
             if abs(n_cuts * cut_step - len(fragment)) >= points_frag(SHRED_LENGTH_MCS, rate) / 2:
-                result_fragments.append(fragment[n_cuts * cut_step - 1:])
+                result_fragments.append(np.array(fragment[n_cuts * cut_step - 1:]))
 
-    return np.array(result_fragments)
+    # print(len(result_fragments))
+    # print([i.shape for i in result_fragments])
+    # i = input()
+
+    return np.array(result_fragments, dtype="object")
 
 
 def fft_butter_skewness_filtering(x_data, signal_data, rate=4):
@@ -137,9 +141,6 @@ def fft_butter_skewness_filtering(x_data, signal_data, rate=4):
         preprocessed[i] = [float(j) for j in preprocessed[i] if j != "" and j != "-"]
 
     filtered_data = lenght_preproc(preprocessed, rate)
-
-    for i in range(len(filtered_data)):
-        filtered_data[i] = np.array(filtered_data[i])
 
     fragments = [[], []]
 
