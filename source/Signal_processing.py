@@ -39,15 +39,16 @@ def points_frag(length, rate):
     return int(length * 1000 * rate)
 
 
-def shred_param_calc(frag_points, shred_points):
+def shred_param_calc(frag_points, shred_points, COVER_PERCENT=0.7):
     """
     Function for calculating shredding parameter
     :param frag_points: num points of shredding fragment
     :param shred_points: num points of result fragments
     :return: cut_num, cut_offset: int, int; num of cuts & offset of cuts
+    :param COVER_PERCENT: =0.7, how much slicing cover fragment
     """
     cut_num = frag_points // shred_points + 1
-    while abs(frag_points - shred_points * cut_num) / frag_points < 0.5:
+    while abs(frag_points - shred_points * cut_num) / frag_points < COVER_PERCENT:
         cut_num += 1
     cut_offset = frag_points // cut_num
 
@@ -57,14 +58,14 @@ def shred_param_calc(frag_points, shred_points):
 def lenght_preproc(preproc_fragments, rate,
                    MIN_LENGTH_MCS=0.008,
                    MAX_LENGTH_MCS=0.035,
-                   SHRED_LENGTH_MCS=0.02):
+                   SHRED_LENGTH_MCS=0.025):
     """
     Function for filtering too short fragments & shredding too long
     :param preproc_fragments: list(list(float)), main signal y_data
     :param rate: int, signal rate (4 / 10)
     :param MAX_LENGTH_MCS: =0.008 mcs, < delete
     :param MIN_LENGTH_MCS: =0.035 mcs, > shred
-    :param SHRED_LENGTH_MCS: =0.02 mcs, length of shredding fragments
+    :param SHRED_LENGTH_MCS: =0.025 mcs, length of shredding fragments
     :return: np.array()
     """
     result_fragments = []
@@ -95,8 +96,8 @@ def fft_butter_skewness_filtering(x_data, signal_data, rate=4):
     """
     # CONSTANTS
     TOLERANCE = 1  # Чем выше, тем больше шанс получить два филамента на одной картинке
-    MIN_PERIODS = 3  # В среднем количество колебаний на графике, начальный порог
-    SINUSOIDALITY = 0.6  # Абсолютная асимметрия
+    MIN_PERIODS = 4  # В среднем количество колебаний на графике, начальный порог
+    SINUSOIDALITY = 0.7  # Абсолютная асимметрия
     BOARDERS_PERCENT = 0.5  # Сколько процентов длины добавляем слева и справа от филамента.
     MIN_LENGTH_MCS = 0.008
     MAX_LENGTH_MCS = 0.035
