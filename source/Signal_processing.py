@@ -74,7 +74,7 @@ def lenght_preproc(preproc_fragments, rate,
         frag_len = length_frag(len(fragment), rate)
         if MAX_LENGTH_MCS >= frag_len >= MIN_LENGTH_MCS:
             result_fragments.append(np.array(fragment))
-        elif MAX_LENGTH_MCS <= frag_len:
+        elif MAX_LENGTH_MCS <= frag_len * 1.5:
             n_cuts, cut_step = shred_param_calc(len(fragment), points_frag(SHRED_LENGTH_MCS, rate))
             # print(n_cuts, cut_step, points_frag(SHRED_LENGTH_MCS, rate), len(fragment), n_cuts * cut_step,
             #       n_cuts * points_frag(SHRED_LENGTH_MCS, rate),
