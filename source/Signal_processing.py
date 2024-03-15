@@ -57,7 +57,7 @@ def shred_param_calc(frag_points, shred_points, COVER_PERCENT=0.7):
 
 def lenght_preproc(preproc_fragments, rate,
                    MIN_LENGTH_MCS=0.008,
-                   MAX_LENGTH_MCS=0.035,
+                   MAX_LENGTH_MCS=0.03,
                    SHRED_LENGTH_MCS=0.025):
     """
     Function for filtering too short fragments & shredding too long
