@@ -21,18 +21,85 @@ def x_in_y(query, base):
     return False
 
 
-def fft_butter_skewness_filtering(x_data, signal_data):
+def length_frag(n_points, rate):
+    """
+    :param n_points: int, num of points in fragment
+    :param rate: int, signal rate (4 / 10)
+    :return: float, length of fragment in mcs
+    """
+    return n_points / (rate * 1000)
+
+
+def points_frag(length, rate):
+    """
+    :param length: float, length of fragment
+    :param rate: int, signal rate (4 / 10)
+    :return: float, length of fragment in mcs
+    """
+    return int(length * 1000 * rate)
+
+
+def shred_param_calc(frag_points, shred_points):
+    """
+    Function for calculating shredding parameter
+    :param frag_points: num points of shredding fragment
+    :param shred_points: num points of result fragments
+    :return: cut_num, cut_offset: int, int; num of cuts & offset of cuts
+    """
+    cut_num = frag_points // shred_points + 1
+    while abs(frag_points - shred_points * cut_num) / frag_points < 0.5:
+        cut_num += 1
+    cut_offset = frag_points // cut_num
+
+    return cut_num, cut_offset
+
+
+def lenght_preproc(preproc_fragments, rate,
+                   MIN_LENGTH_MCS=0.008,
+                   MAX_LENGTH_MCS=0.035,
+                   SHRED_LENGTH_MCS=0.02):
+    """
+    Function for filtering too short fragments & shredding too long
+    :param preproc_fragments: list(list(float)), main signal y_data
+    :param rate: int, signal rate (4 / 10)
+    :param MAX_LENGTH_MCS: =0.008 mcs, < delete
+    :param MIN_LENGTH_MCS: =0.035 mcs, > shred
+    :param SHRED_LENGTH_MCS: =0.02 mcs, length of shredding fragments
+    :return: np.array()
+    """
+    result_fragments = []
+
+    for fragment in preproc_fragments:
+        frag_len = length_frag(len(fragment), rate)
+        if MAX_LENGTH_MCS >= frag_len >= MIN_LENGTH_MCS:
+            result_fragments.append(fragment)
+        elif MAX_LENGTH_MCS <= frag_len:
+            n_cuts, cut_step = shred_param_calc(len(fragment), points_frag(SHRED_LENGTH_MCS, rate))
+            print(n_cuts, cut_step, points_frag(SHRED_LENGTH_MCS, rate), len(fragment), n_cuts * cut_step,
+                  n_cuts * points_frag(SHRED_LENGTH_MCS, rate),
+                  abs(len(fragment) - n_cuts * points_frag(SHRED_LENGTH_MCS, rate)) / len(fragment))
+            for i in range(n_cuts):
+                result_fragments.append(fragment[i * cut_step:min((i + 1) * cut_step, len(fragment) - 1)])
+            if abs(n_cuts * cut_step - len(fragment)) >= points_frag(SHRED_LENGTH_MCS, rate) / 2:
+                result_fragments.append(fragment[n_cuts * cut_step - 1:])
+
+    return np.array(result_fragments)
+
+
+def fft_butter_skewness_filtering(x_data, signal_data, rate=4):
     """
     :param x_data:  np.array(), main signal x_data
     :param signal_data: np.array(), main signal y_data
+    :param rate: int, signal rate (4 / 10)
     :return: [x_lists, y_lists], filtered fragments
     """
     # CONSTANTS
     TOLERANCE = 1  # Чем выше, тем больше шанс получить два филамента на одной картинке
-    MIN_LENGTH = 10  # Характеристика длины филамента
     MIN_PERIODS = 3  # В среднем количество колебаний на графике, начальный порог
     SINUSOIDALITY = 0.6  # Абсолютная асимметрия
     BOARDERS_PERCENT = 0.5  # Сколько процентов длины добавляем слева и справа от филамента.
+    MIN_LENGTH_MCS = 0.008
+    MAX_LENGTH_MCS = 0.035
 
     signal_data_d2 = np.diff(signal_data, n=2)
 
@@ -67,8 +134,8 @@ def fft_butter_skewness_filtering(x_data, signal_data):
     for i in range(len(preprocessed)):
         # print(preprocessed[i] if "-" in preprocessed[i] else "", end="")
         preprocessed[i] = [float(j) for j in preprocessed[i] if j != "" and j != "-"]
-    # print(1)
-    filtered_data = np.array([i for i in preprocessed if len(i) > MIN_LENGTH], dtype="object")
+
+    filtered_data = lenght_preproc(preprocessed, rate)
 
     for i in range(len(filtered_data)):
         filtered_data[i] = np.array(filtered_data[i])
@@ -89,7 +156,8 @@ def fft_butter_skewness_filtering(x_data, signal_data):
         if k > MIN_PERIODS * 2 and abs_skewness < SINUSOIDALITY:
             r = x_in_y(filtered_data[i][:5].tolist(), signal_data.tolist())
             x_id = np.array(
-                list(range(r - int(BOARDERS_PERCENT * filtered_data[i].shape[0]), r + int((BOARDERS_PERCENT + 1) * filtered_data[i].shape[0]))))
+                list(range(r - int(BOARDERS_PERCENT * filtered_data[i].shape[0]),
+                           r + int((BOARDERS_PERCENT + 1) * filtered_data[i].shape[0]))))
 
             fragments[0].append(x_data[x_id])
             fragments[1].append(signal_data[x_id])
