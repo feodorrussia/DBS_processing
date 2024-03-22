@@ -128,7 +128,7 @@ for name_filter in name_filters:
         fragments_csv_name = f"result_fragments/new_new_{file_name[:-4]}_{name_filter}_result_{add_name_str}fragments.csv"
 
         # log
-        print("#log: Сохранение результатов.")
+        print("\n#log: Сохранение результатов.")
         start = time.time()
         save_results_toFiles(predictions, fragments, data_csv_name, fragments_csv_name, signal_meta,
                              path_to_csv=path_to_proj + path_to_csv, edge=edge, f_save_all=f_save_all)

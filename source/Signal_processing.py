@@ -74,7 +74,7 @@ def lenght_preproc(preproc_fragments, rate,
         frag_len = length_frag(len(fragment), rate)
         if MAX_LENGTH_MCS >= frag_len >= MIN_LENGTH_MCS:
             result_fragments.append(np.array(fragment))
-        elif MAX_LENGTH_MCS <= frag_len * 1.5:
+        elif MAX_LENGTH_MCS <= frag_len:
             n_cuts, cut_step = shred_param_calc(len(fragment), points_frag(SHRED_LENGTH_MCS, rate))
             # print(n_cuts, cut_step, points_frag(SHRED_LENGTH_MCS, rate), len(fragment), n_cuts * cut_step,
             #       n_cuts * points_frag(SHRED_LENGTH_MCS, rate),
@@ -226,6 +226,7 @@ def fft_butter_skewness_filtering_new(t_data, signal_data, rate, log_df=None, f_
     # CONSTANTS
     TOLERANCE = 1  # Чем выше, тем больше шанс получить два филамента на одной картинке
     MIN_PERIODS = 3  # В среднем количество колебаний на графике, начальный порог
+    MAX_PERIODS = 50  #
     MAX_FFT_MAX = 10  #
     MAX_SKEWNESS = 0.4  # Абсолютная асимметрия
     MAX_RATIO_FFT = 0.5
@@ -237,7 +238,7 @@ def fft_butter_skewness_filtering_new(t_data, signal_data, rate, log_df=None, f_
     region = (int(REGION_LENGTH_MCS * rate * 1000) + 1) // 2  # получаем количество точек для рассматриваемого "окна"
 
     if f_disp:
-        print("|")
+        print("|", end="")
 
     n_diff = 1
     signal_data_d1 = np.diff(signal_data, n=n_diff)
@@ -255,29 +256,30 @@ def fft_butter_skewness_filtering_new(t_data, signal_data, rate, log_df=None, f_
     f_fragment = False
 
     search_step = region // 2
-    iter_step = signal_data.shape[0] // 5
-    iter_count = 0
+    iter_step = signal_data.shape[0] // 10
+    iter_count = 1
     point = region
     while point < signal_data.shape[0] - region - n_diff:
         # Выбираем в качестве аномалий то, что +- стандартное отклонение. В лоб, но может сработать
-        fragment = signal_data_d1[point - region:point + region]
+        fragment_d1 = signal_data_d1[point - region:point + region]
 
-        periods = periods_count(fragment)
+        periods_d1 = periods_count(fragment_d1)
+        periods = periods_count(signal_data[point - region:point + region])
 
-        fft = np.fft.fft(fragment)
+        fft = np.fft.fft(fragment_d1)
         fft_v = fft.real ** 2 + fft.imag ** 2
         filter_values = np.vectorize(lambda x: down_to_zero(x, edge=fft_v.max() * 0.05))
         fft_v_filter = filter_values(fft_v)
 
-        frequency = np.unique(np.abs(np.fft.fftfreq(fragment.shape[0])))
+        frequency = np.unique(np.abs(np.fft.fftfreq(fragment_d1.shape[0])))
         frequency = frequency[(frequency >= 0.0) & (frequency <= 0.1)]
         fft_v_filter = fft_v_filter[:frequency.shape[0]]
 
         max_fft, max_ratio_fft, fr_max_fft = count_fft_max(fft_v_filter, frequency)
 
-        abs_skewness = np.abs(skew(fragment))
+        abs_skewness = np.abs(skew(fragment_d1))
 
-        if 0 < max_fft <= MAX_FFT_MAX and periods >= MIN_PERIODS and max_ratio_fft < MAX_RATIO_FFT and abs_skewness < MAX_SKEWNESS:
+        if 0 < max_fft <= MAX_FFT_MAX and periods_d1 >= MIN_PERIODS and periods <= MAX_PERIODS and max_ratio_fft < MAX_RATIO_FFT and abs_skewness < MAX_SKEWNESS:
             f_fragment = True
 
             preprocessed_ind_data[-1].append(point)
@@ -303,7 +305,7 @@ def fft_butter_skewness_filtering_new(t_data, signal_data, rate, log_df=None, f_
     signal_data_f = np.zeros(signal_data.shape[0])
 
     iter_step = len(preprocessed_ind_data) // 5
-    iter_count = 0
+    iter_count = 1
     for i in range(len(preprocessed_ind_data)):
         fragment_ind = preprocessed_ind_data[i]
         fragment_len = fragment_ind.shape[0]
@@ -315,7 +317,7 @@ def fft_butter_skewness_filtering_new(t_data, signal_data, rate, log_df=None, f_
         fragments[1].append(signal_data[l_edge:r_edge + 1])
 
         signal_data_f[l_edge:r_edge + 1] = 0.2
-        if f_disp and iter_step * iter_count <= point:
+        if f_disp and iter_step * iter_count <= i:
             iter_count += 1
             print(".", end="")
 
