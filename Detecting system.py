@@ -6,7 +6,8 @@ from keras.models import load_model
 
 from Files_operating import read_dataFile, save_results_toFiles
 from source.NN_enviroments import *
-from source.Signal_processing import fft_butter_skewness_filtering, data_converting_CNN
+from source.Signal_processing import fft_butter_skewness_filtering, data_converting_CNN, \
+    fft_butter_skewness_filtering_new
 
 path_to_proj = input("Введите путь к запускаемому файлу (Plasma_processing/): ")
 path_to_csv = input("Введите путь к файлам с данными относительно запускаемого файла (data_csv/): ")
@@ -58,7 +59,7 @@ print("\n#log: Канал считан успешно")
 # log
 print("\n#log: Начата предварительная обработка данных.")
 start = time.time()
-fragments = fft_butter_skewness_filtering(x, y)
+fragments = fft_butter_skewness_filtering_new(x, y, SIGNAL_RATE, f_disp=True)
 # log
 print(f"#log: Предварительная обработка и фильтрация выполнена успешно. Tooks - {round(time.time() - start, 2) * 1} s.")
 print("==========================================")
@@ -71,6 +72,7 @@ print("#log: Данные фрагментов нормализованы и п�
 
 gc.collect()
 
+f_saving = False
 # neuro-filter
 name_filters = ["cnn_bin_class_11"]  # "auto_bin_class_8", "auto_bin_class_11", "cnn_bin_class_4", "cnn_bin_class_10",
 for name_filter in name_filters:
@@ -109,27 +111,28 @@ for name_filter in name_filters:
     print(f"#log: Количество спрогнозированных филаментов: {len(list(filter(lambda x: x, filtered)))}")
     print("==========================================")
 
-    f_save = input("\nВедите у, чтобы сохранить все фрагменты (без фильтрации по оценке): ")
-    f_save_all = False
-    add_name_str = "fil_"
-    if f_save.lower() in ["y", "у", "e", "н"]:
-        f_save_all = True
-        add_name_str = "all_"
+    if f_saving or input("\nВедите у, чтобы запустить процесс сохранения: ").lower() in ["y", "у", "e", "н"]:
+        f_save = input("\nВедите у, чтобы сохранить все фрагменты (без фильтрации по оценке): ")
+        f_save_all = False
+        add_name_str = "fil_"
+        if f_save.lower() in ["y", "у", "e", "н"]:
+            f_save_all = True
+            add_name_str = "all_"
 
-    if not os.path.exists(path_to_csv + "result_data/"):
-        os.mkdir(path_to_csv + "result_data/")
-    if not os.path.exists(path_to_csv + "result_fragments/"):
-        os.mkdir(path_to_csv + "result_fragments/")
+        if not os.path.exists(path_to_csv + "result_data/"):
+            os.mkdir(path_to_csv + "result_data/")
+        if not os.path.exists(path_to_csv + "result_fragments/"):
+            os.mkdir(path_to_csv + "result_fragments/")
 
-    data_csv_name = f"result_data/new_{file_name[:-4]}_{name_filter}_result_{add_name_str}data.csv"
-    fragments_csv_name = f"result_fragments/new_{file_name[:-4]}_{name_filter}_result_{add_name_str}fragments.csv"
+        data_csv_name = f"result_data/new_new_{file_name[:-4]}_{name_filter}_result_{add_name_str}data.csv"
+        fragments_csv_name = f"result_fragments/new_new_{file_name[:-4]}_{name_filter}_result_{add_name_str}fragments.csv"
 
-    # log
-    print("#log: Сохранение результатов.")
-    start = time.time()
-    save_results_toFiles(predictions, fragments, data_csv_name, fragments_csv_name, signal_meta,
-                         path_to_csv=path_to_proj + path_to_csv, edge=edge, f_save_all=f_save_all)
-    # log
-    print(f"#log: Результаты сохранены. Tooks - {round(time.time() - start, 2) * 1} s. Файлы:\n" +
-          f"{path_to_proj + path_to_csv + data_csv_name}\n{path_to_proj + path_to_csv + fragments_csv_name}\n")
-    gc.collect()
+        # log
+        print("#log: Сохранение результатов.")
+        start = time.time()
+        save_results_toFiles(predictions, fragments, data_csv_name, fragments_csv_name, signal_meta,
+                             path_to_csv=path_to_proj + path_to_csv, edge=edge, f_save_all=f_save_all)
+        # log
+        print(f"#log: Результаты сохранены. Tooks - {round(time.time() - start, 2) * 1} s. Файлы:\n" +
+              f"{path_to_proj + path_to_csv + data_csv_name}\n{path_to_proj + path_to_csv + fragments_csv_name}\n")
+        gc.collect()
