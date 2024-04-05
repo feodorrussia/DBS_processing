@@ -35,7 +35,7 @@ def read_dataFile(file_path, path_to_proj):
 
     os.remove(path_to_proj + 'fil.dat')
 
-    return data
+    return data.dropna(axis=1)
 
 
 def save_df_toFile(df, name_csv, path_to_csv=""):
