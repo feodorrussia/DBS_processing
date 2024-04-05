@@ -72,12 +72,16 @@ def f_m(y_true, y_pred, b=1):
     return (1 + b ** 2) * ((precision * recall) / (b ** 2 * precision + recall + K.epsilon()))
 
 
+def class_scores_processing(y_pred):
+    return 1.0 if y_pred[0] <= y_pred[1] else 0.0
+
+
 # Построение графика Количества отобраннных филаментов от величины граничной вероятности
 def plot_predictionCurve(pred_y, test_y=None):
     edges = np.linspace(0, 1, 100)
     fil_nums = []
     for i in edges:
-        filtered = pred_y > i
+        filtered = pred_y >= i
         fil_nums.append(len(list(filter(lambda x: x, filtered))))
 
     fig, ax = plt.subplots()
