@@ -1,4 +1,5 @@
 import numpy as np
+from numba import jit
 from scipy import signal, interpolate
 from scipy.stats import skew
 
@@ -39,7 +40,7 @@ def points_frag(length, rate):
     return int(length * 1000 * rate)
 
 
-def shred_param_calc(frag_points, shred_points, COVER_PERCENT=0.7):
+def shred_param_calc(frag_points, shred_points, COVER_PERCENT=0.5):
     """
     Function for calculating shredding parameter
     :param frag_points: num points of shredding fragment
@@ -55,7 +56,7 @@ def shred_param_calc(frag_points, shred_points, COVER_PERCENT=0.7):
     return cut_num, cut_offset
 
 
-def lenght_preproc(preproc_fragments, rate,
+def length_preproc(preproc_fragments, rate,
                    MIN_LENGTH_MCS=0.008,
                    MAX_LENGTH_MCS=0.03,
                    SHRED_LENGTH_MCS=0.025):
@@ -72,16 +73,16 @@ def lenght_preproc(preproc_fragments, rate,
 
     for fragment in preproc_fragments:
         frag_len = length_frag(len(fragment), rate)
-        if MAX_LENGTH_MCS >= frag_len >= MIN_LENGTH_MCS:
+        if MAX_LENGTH_MCS >= frag_len * 1.5 and frag_len >= MIN_LENGTH_MCS:
             result_fragments.append(np.array(fragment))
-        elif MAX_LENGTH_MCS <= frag_len:
+        elif MAX_LENGTH_MCS < frag_len * 1.5:
             n_cuts, cut_step = shred_param_calc(len(fragment), points_frag(SHRED_LENGTH_MCS, rate))
             # print(n_cuts, cut_step, points_frag(SHRED_LENGTH_MCS, rate), len(fragment), n_cuts * cut_step,
             #       n_cuts * points_frag(SHRED_LENGTH_MCS, rate),
             #       abs(len(fragment) - n_cuts * points_frag(SHRED_LENGTH_MCS, rate)) / len(fragment))
             for i in range(n_cuts):
                 result_fragments.append(np.array(fragment[i * cut_step:min((i + 1) * cut_step, len(fragment) - 1)]))
-            if abs(n_cuts * cut_step - len(fragment)) >= points_frag(SHRED_LENGTH_MCS, rate) / 2:
+            if len(fragment[n_cuts * cut_step - 1:]) > 5:
                 result_fragments.append(np.array(fragment[n_cuts * cut_step - 1:]))
 
     # print(len(result_fragments))
@@ -140,7 +141,7 @@ def fft_butter_skewness_filtering(x_data, signal_data, rate):
         # print(preprocessed[i] if "-" in preprocessed[i] else "", end="")
         preprocessed[i] = [float(j) for j in preprocessed[i] if j != "" and j != "-"]
 
-    filtered_data = lenght_preproc(preprocessed, rate)
+    filtered_data = length_preproc(preprocessed, rate)
 
     fragments = [[], []]
 
@@ -167,6 +168,7 @@ def fft_butter_skewness_filtering(x_data, signal_data, rate):
     return fragments
 
 
+@jit
 def count_fft_max(arr: np.array, arr2: np.array = None):
     f_increase = False
     max_count = 0
@@ -201,10 +203,12 @@ def count_fft_max(arr: np.array, arr2: np.array = None):
     return [max_count, mean_max_ratio, max_max_freq]
 
 
+@jit
 def down_to_zero(x, edge=0.05):
     return x if x > edge else 0.0
 
 
+@jit
 def periods_count(fragment):
     k = 0
     mean = np.mean(fragment)
@@ -230,9 +234,9 @@ def fft_butter_skewness_filtering_new(t_data, signal_data, rate, log_df=None, f_
     MAX_FFT_MAX = 10  #
     MAX_SKEWNESS = 0.4  # Абсолютная асимметрия
     MAX_RATIO_FFT = 0.5
-    BOARDERS_PERCENT = 0.3  # Сколько процентов длины добавляем слева и справа от филамента.
+    BOARDERS_PERCENT = 0.5  # Сколько процентов длины добавляем слева и справа от филамента.
     MIN_LENGTH_MCS = 0.008
-    REGION_LENGTH_MCS = 0.015
+    REGION_LENGTH_MCS = 0.012
     MAX_LENGTH_MCS = 0.035
 
     region = (int(REGION_LENGTH_MCS * rate * 1000) + 1) // 2  # получаем количество точек для рассматриваемого "окна"
@@ -300,7 +304,7 @@ def fft_butter_skewness_filtering_new(t_data, signal_data, rate, log_df=None, f_
     if log_df is not None:
         log_df["ch11_f"] = signal_data_f
 
-    preprocessed_ind_data = lenght_preproc(preprocessed_ind_data, rate, SHRED_LENGTH_MCS=REGION_LENGTH_MCS)
+    preprocessed_ind_data = length_preproc(preprocessed_ind_data, rate, SHRED_LENGTH_MCS=REGION_LENGTH_MCS * 1.2)
     fragments = [[], []]
     signal_data_f = np.zeros(signal_data.shape[0])
 
@@ -363,6 +367,7 @@ def data_converting_CNN(fragments, rate=4, to_len=512):
             print("===== Warning =====")
             # запрос команды подтверждения
             print(f"Фрагмент {i} содержит меньше 5 или больше 500 точек ({len(fragments[0][i])} точек)")
+            continue
 
         norm_signal_fragment, norm_meta_data = fragment_smoothing_preproc(fragments[0][i], fragments[1][i],
                                                                           rate, to_len)
