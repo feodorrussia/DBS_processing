@@ -164,6 +164,7 @@ def fft_butter_skewness_filtering(t_data, signal_data, rate, f_disp=False):
     MAX_LENGTH_MCS = 0.035
 
     CHANNELS_N = len(signal_data)
+    SIGNAL_LEN = signal_data[0].shape[0]
 
     region = (int(REGION_LENGTH_MCS * rate * 1000) + 1) // 2  # получаем количество точек для рассматриваемого "окна"
 
@@ -183,17 +184,17 @@ def fft_butter_skewness_filtering(t_data, signal_data, rate, f_disp=False):
     f_fragment = False
 
     search_step = region // 2
-    iter_step = signal_data.shape[0] // 10
+    iter_step = SIGNAL_LEN // 10
     iter_count = 1
     point = region
-    while point < signal_data.shape[0] - region - n_diff:
+    while point < SIGNAL_LEN - region - n_diff:
         # Выбираем в качестве аномалий то, что +- стандартное отклонение. В лоб, но может сработать
         f_point = False
         for ch_i in range(CHANNELS_N):
             fragment_d1 = signal_data_d1[ch_i][point - region:point + region]
 
             periods_d1 = periods_count(fragment_d1)
-            periods = periods_count(signal_data[point - region:point + region])
+            periods = periods_count(signal_data[ch_i][point - region:point + region])
 
             fft = np.fft.fft(fragment_d1)
             fft_v = fft.real ** 2 + fft.imag ** 2
