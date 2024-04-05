@@ -13,17 +13,23 @@ from source.Signal_processing import data_converting_CNN, \
 def get_channel(data):
     # Предложение пользователю выбрать канал
     available_channels = [col for col in data.columns if col != "t" and str(data[col][0]) != 'nan']
-    selected_channels = input("\nДоступные каналы: " + ', '.join(
+    selected_channels = input("\nДоступные каналы: " + ' '.join(
         available_channels) + "\n----------\nВведите каналы для анализа: ").strip().split()
     # Проверка наличия выбранного канала в данных
-    if all([selected_channel in available_channels for selected_channel in selected_channels]):
+    if all([selected_channel in available_channels for selected_channel in selected_channels]) and len(selected_channels) > 0:
+        # log
+        print(f"\n#log: Каналы {', '.join(selected_channels)} считаны успешно")
+
         return selected_channels
     else:
         print("Некоторые каналы не найдены в данных.")
-        selected_channels = input("Доступные каналы: " + ', '.join(
+        selected_channels = input("Доступные каналы: " + ' '.join(
             available_channels) + "\n----------\nВведите каналы для анализа: ").strip().split()
 
-    if all([selected_channel in available_channels for selected_channel in selected_channels]):
+    if all([selected_channel in available_channels for selected_channel in selected_channels]) and len(selected_channels) > 0:
+        # log
+        print(f"\n#log: Каналы {', '.join(selected_channels)} считаны успешно")
+
         return selected_channels
     return None
 
@@ -58,9 +64,6 @@ def filtering_function(fragments, name_filter, path_to_proj):
 
 
 def detect_function(data_t, data_ch, file_name, signal_meta, signal_channels, path_to_proj, path_to_csv):
-    # log
-    print("\n#log: Канал считан успешно")
-
     # log
     print("\n#log: Начата предварительная обработка данных.")
     start = time.time()
@@ -122,7 +125,7 @@ def detect_function(data_t, data_ch, file_name, signal_meta, signal_channels, pa
                 start = time.time()
                 signal_meta["ch"] = signal_channels[ch_i]
                 save_results_toFiles(predictions, fragments, data_csv_name, fragments_csv_name, signal_meta,
-                                     path_to_csv=path_to_proj + path_to_csv, edge=edge, f_save_all=f_save_all)
+                                     path_to_csv=path_to_proj + path_to_csv, edge=edge, f_save_all=f_save_all, f_disp=True)
                 # log
                 print(f"#log: Результаты сохранены. Tooks - {round(time.time() - start, 2) * 1} s. Файлы:\n" +
                       f"{path_to_proj + path_to_csv + data_csv_name}\n{path_to_proj + path_to_csv + fragments_csv_name}\n")
@@ -168,4 +171,4 @@ while channels is not None:
     detect_function(x, y, filename, meta, channels, proj_path, data_path)
     gc.collect()
 
-    channel = get_channel(df)
+    channels = get_channel(df)
