@@ -48,7 +48,7 @@ def save_df_toFile(df, name_csv, path_to_csv=""):
 
 
 def save_results_toFiles(predictions, fragments, file_data_csv_name, file_fragments_csv_name, meta_data, path_to_csv="",
-                         edge=0.5, signal_maxLength=512, f_save_all=True):
+                         edge=0.5, signal_maxLength=512, f_save_all=True, f_disp=False):
     """
     :param predictions:
     :param fragments:
@@ -58,15 +58,23 @@ def save_results_toFiles(predictions, fragments, file_data_csv_name, file_fragme
     :param path_to_csv: default=""
     :param edge: default=0.5
     :param signal_maxLength: default=512
+    :param f_disp:
+    :param f_save_all:
     :return:
     """
     df = pd.DataFrame(columns=(['D_ID', 'Ch', 'Y', 'Length', 'Rate'] + [str(i) for i in range(signal_maxLength)]))
     df_2 = pd.DataFrame(columns=(['Ch', 'Y', 'Left', 'Right', 'Rate']))
 
+    if f_disp:
+        print("|", end="")
+
     fragments_count = 0
     filaments_count = 0
     tot_filaments_mark = 0
     noise_count = 0
+
+    iter_step = predictions.shape[0] // 10
+    iter_count = 1
 
     pred_index = 0
     for i in range(predictions.shape[0]):
@@ -135,10 +143,17 @@ def save_results_toFiles(predictions, fragments, file_data_csv_name, file_fragme
             df = df.iloc[0:0]
             df_2 = df_2.iloc[0:0]
 
+        if f_disp and iter_step * iter_count <= i:
+            iter_count += 1
+            print(".", end="")
+
     # сохранение Data Frame
     if len(df.count(axis="rows")) > 0:
         save_df_toFile(df, file_data_csv_name, path_to_csv)
         save_df_toFile(df_2, file_fragments_csv_name, path_to_csv)
+
+    if f_disp:
+        print("|")
 
     print(f"Количество сохранённых фрагментов: {fragments_count}\n" +
           f"Филаментов: {filaments_count} (средняя оценка филаментов: {round(tot_filaments_mark / (filaments_count + 1), 2)})" +
