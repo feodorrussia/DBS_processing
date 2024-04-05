@@ -68,7 +68,8 @@ def save_results_toFiles(predictions, fragments, file_data_csv_name, file_fragme
     tot_filaments_mark = 0
     noise_count = 0
 
-    for i in range(len(fragments[0])):
+    pred_index = 0
+    for i in range(predictions.shape[0]):
         fragment_x = fragments[0][i].tolist()
         fragment_values = fragments[1][i].tolist()
 
@@ -79,20 +80,26 @@ def save_results_toFiles(predictions, fragments, file_data_csv_name, file_fragme
         fragment_length = fragment_range[1] - fragment_range[0]
 
         if fragment_length <= 0:
-            print("===== Length error =====")
+            print(f"===== Length error (len: {fragment_length}) =====")
             continue
 
         if len(fragment_x) <= 5 or len(fragment_x) >= 500:
             print("===== Warning =====")
             # запрос команды подтверждения
             print(f"Фрагмент {i} содержит меньше 5 или больше 500 точек ({len(fragment_x)} точек)")
+            continue
 
         # получение с помощью интерполяции квадратичным сплайном нужного количества точек фрагмента (510 точек)
         fragment_interpolate_values = sc_i.interp1d(fragment_x, fragment_values, kind="quadratic")(
             np.linspace(fragment_x[0], fragment_x[-1], signal_maxLength))
 
         # получение метки фрагмента из прогнозированных данных
-        fragment_mark = round(predictions[i][0], 2)
+        if len(predictions.shape) > 1:
+            fragment_mark = round(predictions[pred_index][0], 2)
+        else:
+            fragment_mark = round(predictions[pred_index], 2)
+
+        pred_index += 1
 
         if f_save_all or fragment_mark >= edge:
             fragments_count += 1
