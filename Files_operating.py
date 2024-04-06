@@ -62,8 +62,7 @@ def save_results_toFiles(predictions, fragments, file_data_csv_name, file_fragme
     :param f_save_all:
     :return:
     """
-    df = pd.DataFrame(columns=(['D_ID', 'Ch', 'Y', 'Length', 'Rate'] + [str(i) for i in range(signal_maxLength)]))
-    df_2 = pd.DataFrame(columns=(['Ch', 'Y', 'Left', 'Right', 'Rate']))
+    df = pd.DataFrame(columns=(['D_ID', 'Ch', 'Left', 'Right', 'Y', 'Length', 'Rate'] + [str(i) for i in range(signal_maxLength)]))
 
     if f_disp:
         print("|", end="")
@@ -113,16 +112,10 @@ def save_results_toFiles(predictions, fragments, file_data_csv_name, file_fragme
             fragments_count += 1
 
             # добавление данных в Data Frame
-            df.loc[-1] = [meta_data["id"], meta_data["ch"], fragment_mark, fragment_length, meta_data["rate"]] + list(
+            df.loc[-1] = [meta_data["id"], meta_data["ch"], min(fragment_range), max(fragment_range), fragment_mark, fragment_length, meta_data["rate"]] + list(
                 fragment_interpolate_values)  # adding a row
             df.index = df.index + 1  # shifting index
             df = df.sort_index()  # sorting by index
-
-            # добавление данных в Data Frame 2
-            df_2.loc[-1] = [meta_data["ch"], fragment_mark, min(fragment_range), max(fragment_range),
-                            meta_data["rate"]]  # adding a row
-            df_2.index = df_2.index + 1  # shifting index
-            df_2 = df_2.sort_index()  # sorting by index
 
         # обработка автоматического сохранения Data Frame
         if fragment_mark < edge:
@@ -137,11 +130,9 @@ def save_results_toFiles(predictions, fragments, file_data_csv_name, file_fragme
 
             # сохранение Data Frame
             save_df_toFile(df, file_data_csv_name, path_to_csv)
-            save_df_toFile(df_2, file_fragments_csv_name, path_to_csv)
 
             # очистка Data Frame
             df = df.iloc[0:0]
-            df_2 = df_2.iloc[0:0]
 
         if f_disp and iter_step * iter_count <= i:
             iter_count += 1
@@ -150,7 +141,6 @@ def save_results_toFiles(predictions, fragments, file_data_csv_name, file_fragme
     # сохранение Data Frame
     if len(df.count(axis="rows")) > 0:
         save_df_toFile(df, file_data_csv_name, path_to_csv)
-        save_df_toFile(df_2, file_fragments_csv_name, path_to_csv)
 
     if f_disp:
         print("|")
