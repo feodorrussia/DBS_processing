@@ -2,6 +2,7 @@ import gc
 import os
 import time
 
+import pandas as pd
 from keras.models import load_model
 
 from Files_operating import read_dataFile, save_results_toFiles
@@ -117,18 +118,26 @@ def detect_function(data_t, data_ch, file_name, signal_meta, signal_channels, pa
                 if not os.path.exists(path_to_csv + "result_fragments/"):
                     os.mkdir(path_to_csv + "result_fragments/")
 
-                data_csv_name = f"result_data/new_new/{file_name[:-4]}_{name_filter}_result_{add_name_str}data.csv"
-                fragments_csv_name = f"result_fragments/new_new/{file_name[:-4]}_{name_filter}_result_{add_name_str}fragments.csv"
+                data_csv_name = f"result_data/{file_name[:-4]}_{name_filter}_result_{add_name_str}data.csv"
 
                 # log
                 print("\n#log: Сохранение результатов.")
                 start = time.time()
                 signal_meta["ch"] = signal_channels[ch_i]
-                save_results_toFiles(predictions, fragments, data_csv_name, fragments_csv_name, signal_meta,
-                                     path_to_csv=path_to_proj + path_to_csv, edge=edge, f_save_all=f_save_all, f_disp=True)
+                save_results_toFiles(predictions, [fragments[0], fragments[ch_i + 1]], data_csv_name, signal_meta,
+                                     path_to_csv=path_to_proj + path_to_csv, edge=edge,
+                                     f_save_all=f_save_all, f_disp=True)
+
+                # remove
+                ind_sec_ch = abs(ch_i - 1)  # remove
+                signal_meta["ch"] = signal_channels[ind_sec_ch] + "_0"  # remove
+                save_results_toFiles(predictions, [fragments[0], fragments[ind_sec_ch + 1]], data_csv_name, signal_meta,  # remove
+                                     path_to_csv=path_to_proj + path_to_csv, edge=edge,   # remove
+                                     f_save_all=f_save_all, f_disp=True)  # remove
+
                 # log
                 print(f"#log: Результаты сохранены. Tooks - {round(time.time() - start, 2) * 1} s. Файлы:\n" +
-                      f"{path_to_proj + path_to_csv + data_csv_name}\n{path_to_proj + path_to_csv + fragments_csv_name}\n")
+                      f"{path_to_proj + path_to_csv + data_csv_name}\n")
                 gc.collect()
 
 
@@ -146,10 +155,14 @@ FILE_D_ID = filename[:5]  # "00000"
 # log
 print(f"\n#log: Выбран файл {filename} (FILE_ID: {FILE_D_ID})")
 
-fragments_csv_name = file_path[:-4] + "_fragments.csv"
+# filename = "41226 DBS_fragment_for_DA_analytic.csv"  # remove
+# FILE_D_ID = filename[:5] + "_fr"  # remove
+# file_path = data_path + filename  # remove
 
 start = time.time()
+# df = pd.read_csv(file_path)  # remove
 df = read_dataFile(file_path, proj_path)
+
 # log
 print(f"#log: Файл {filename} считан успешно. Tooks - {round(time.time() - start, 2) * 1} s.")
 gc.collect()

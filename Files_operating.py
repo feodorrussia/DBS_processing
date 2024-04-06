@@ -47,7 +47,7 @@ def save_df_toFile(df, name_csv, path_to_csv=""):
         df.to_csv(path_to_csv + name_csv, index=False)
 
 
-def save_results_toFiles(predictions, fragments, file_data_csv_name, file_fragments_csv_name, meta_data, path_to_csv="",
+def save_results_toFiles(predictions, fragments, file_data_csv_name, meta_data, path_to_csv="",
                          edge=0.5, signal_maxLength=512, f_save_all=True, f_disp=False):
     """
     :param predictions:
