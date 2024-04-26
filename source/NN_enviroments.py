@@ -72,8 +72,11 @@ def f_m(y_true, y_pred, b=1):
     return (1 + b ** 2) * ((precision * recall) / (b ** 2 * precision + recall + K.epsilon()))
 
 
-def class_scores_processing(y_pred):
-    return 1.0 if y_pred[0] <= y_pred[1] else 0.0
+def class_scores_processing(y_pred, f_over=False, edge=0.9):
+    if f_over:
+        return 1. if y_pred[0] <= y_pred[1] or y_pred[1] >= edge else 0.
+    else:
+        return y_pred[1] if y_pred[0] <= y_pred[1] or y_pred[1] >= edge else 0.
 
 
 # Построение графика Количества отобраннных филаментов от величины граничной вероятности
@@ -85,11 +88,12 @@ def plot_predictionCurve(pred_y, test_y=None):
         fil_nums.append(len(list(filter(lambda x: x, filtered))))
 
     fig, ax = plt.subplots()
-    ax.plot(edges, fil_nums)
+    ax.hist(pred_y)
     if test_y is not None:
         ax.hist(test_y)
     ax.grid()
     ax.set_ylabel('Numbers of filtered filaments')
+    ax.set_xlabel('Edge')
     ax.set_title('Filtered filaments by edge')
     plt.show()
     plt.clf()
