@@ -53,7 +53,6 @@ def save_results_toFiles(predictions, fragments, file_data_csv_name, meta_data, 
     :param predictions:
     :param fragments:
     :param file_data_csv_name:
-    :param file_fragments_csv_name:
     :param meta_data: {"id": FILE_D_ID, "ch": selected_channel, "rate": SIGNAL_RATE}
     :param path_to_csv: default=""
     :param edge: default=0.5
