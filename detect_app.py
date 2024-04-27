@@ -1,5 +1,7 @@
 import warnings
 
+import numpy as np
+
 warnings.filterwarnings("ignore")
 
 import gc
@@ -53,82 +55,87 @@ def detect_function(data_t, data_ch, signal_meta, signal_channels, path_to_proj,
     fragments_num = len(fragments[0])
     start_time = time.time()
 
-    for ch_i in range(len(signal_channels)):
-        fragments_smooth = data_converting_CNN([fragments[0], fragments[ch_i + 1]])
+    fragments_smooth_1 = data_converting_CNN([fragments[0], fragments[1]])
+    fragments_smooth_2 = data_converting_CNN([fragments[0], fragments[2]])
 
-        neuro_filter = load_model(path_to_proj + filter_path, safe_mode=False,
-                                  custom_objects={"focal_loss": focal_loss_01,
-                                                  "focal_loss_01": focal_loss_01,
-                                                  "focal_crossentropy": focal_crossentropy,
-                                                  "f_m": f_m,
-                                                  "f1_m": f1_m,
-                                                  "precision_m": precision_m,
-                                                  "recall_m": recall_m})
+    neuro_filter = load_model(path_to_proj + filter_path, safe_mode=False,
+                              custom_objects={"focal_loss": focal_loss_01,
+                                              "focal_loss_01": focal_loss_01,
+                                              "focal_crossentropy": focal_crossentropy,
+                                              "f_m": f_m,
+                                              "f1_m": f1_m,
+                                              "precision_m": precision_m,
+                                              "recall_m": recall_m})
 
-        predict_classes = neuro_filter.predict(fragments_smooth, verbose=1)
-        predictions = np.apply_along_axis(lambda x: class_scores_processing(x, f_over=True, edge=edge), 1,
-                                          predict_classes)
+    predict_classes_1 = neuro_filter.predict(fragments_smooth_1, verbose=1)
+    scores_1 = np.round(np.apply_along_axis(lambda x: class_scores_processing(x), 1, predict_classes_1), 3)
 
-        scores = np.apply_along_axis(lambda x: class_scores_processing(x), 1, predict_classes)
+    predict_classes_2 = neuro_filter.predict(fragments_smooth_2, verbose=1)
+    scores_2 = np.round(np.apply_along_axis(lambda x: class_scores_processing(x), 1, predict_classes_2), 3)
 
-        with open(path_to_csv + file_ch_data_name, "a") as file:
-            file.write(f"\t{signal_channels[ch_i]}:\n" +
-                       f"\t\tCount classes: 0 - {scores[scores < edge].shape[0]}, 1 - {scores[scores >= edge].shape[0]};\n" +
-                       f"\t\tMean scores: 0 - {predict_classes[scores < edge][:, 0].mean()}, 1 - {scores[scores >= edge].mean()}\n")
-            file.close()
+    with open(path_to_csv + file_ch_data_name, "a") as file:
+        file.write(f"\t{signal_channels[0]}:\n" +
+                   f"\t\tCount classes: 0 - {scores_1[scores_1 < edge].shape[0]}, 1 - {scores_1[scores_1 >= edge].shape[0]};\n" +
+                   f"\t\tMean scores: 0 - {predict_classes_1[scores_1 < edge][:, 0].mean()}, 1 - {scores_1[scores_1 >= edge].mean()}\n")
+        file.write(f"\t{signal_channels[1]}:\n" +
+                   f"\t\tCount classes: 0 - {scores_2[scores_2 < edge].shape[0]}, 1 - {scores_2[scores_2 >= edge].shape[0]};\n" +
+                   f"\t\tMean scores: 0 - {predict_classes_2[scores_2 < edge][:, 0].mean()}, 1 - {scores_2[scores_2 >= edge].mean()}\n")
+        file.close()
 
-        if not os.path.exists("result_data/"):
-            os.mkdir("result_data/")
+    if not os.path.exists("result_data/"):
+        os.mkdir("result_data/")
 
-        pred_index = 0
-        for i in range(fragments_num):
-            fragment_x = fragments[0][i].tolist()
-            fragment_values_1 = fragments[1][i].tolist()
-            fragment_values_2 = fragments[2][i].tolist()
+    pred_index = 0
+    TT_count = 0
+    for i in range(fragments_num):
+        fragment_x = fragments[0][i].tolist()
+        fragment_values_1 = fragments[1][i].tolist()
+        fragment_values_2 = fragments[2][i].tolist()
 
-            # получение границ фрагмента из введённой строки
-            fragment_range = [min(fragment_x), max(fragment_x)]
-            # нормировка границ (если выходит за рамки сигнала) и получение его длительности
-            fragment_range = [fragment_range[0], fragment_range[1]]
-            fragment_length = fragment_range[1] - fragment_range[0]
+        # получение границ фрагмента из введённой строки
+        fragment_range = [min(fragment_x), max(fragment_x)]
 
-            if fragment_length <= 0 or len(fragment_x) <= 5 or len(fragment_x) >= 500:
-                continue
+        # нормировка границ (если выходит за рамки сигнала) и получение его длительности
+        fragment_range = [fragment_range[0], fragment_range[1]]
+        fragment_length = fragment_range[1] - fragment_range[0]
 
-            # получение метки фрагмента из прогнозированных данных
-            if len(predictions.shape) > 1:
-                fragment_mark = round(predictions[pred_index][0], 2)
-            else:
-                fragment_mark = round(predictions[pred_index], 2)
+        if fragment_length <= 0 or len(fragment_x) <= 5 or len(fragment_x) >= 500:
+            continue
 
-            pred_index += 1
+        # получение метки фрагмента из прогнозированных данных
+        fragment_mark_1 = scores_1[pred_index]
+        fragment_mark_2 = scores_2[pred_index]
 
+        pred_index += 1
+
+        if fragment_mark_1 >= edge or fragment_mark_2 >= edge:
             # получение с помощью интерполяции квадратичным сплайном нужного количества точек фрагмента (510 точек)
             fragment_interpolate_values_1 = sc_i.interp1d(fragment_x, fragment_values_1, kind="quadratic")(
                 np.linspace(fragment_x[0], fragment_x[-1], signal_meta["max_len"]))
             fragment_interpolate_values_2 = sc_i.interp1d(fragment_x, fragment_values_2, kind="quadratic")(
                 np.linspace(fragment_x[0], fragment_x[-1], signal_meta["max_len"]))
 
-            if fragment_mark >= edge:
-                # добавление данных в Data Frame
-                fragments_df.loc[-1] = [signal_meta["id"], signal_meta["ch"][0], min(fragment_range),
-                                        max(fragment_range),
-                                        fragment_mark,
-                                        fragment_length, signal_meta["rate"]] + list(
-                    fragment_interpolate_values_1)  # adding a row
-                fragments_df.index = fragments_df.index + 1  # shifting index
-                fragments_df = fragments_df.sort_index()  # sorting by index
+            # добавление данных в Data Frame
+            fragments_df.loc[-1] = [signal_meta["id"], signal_meta["ch"][0], min(fragment_range),
+                                    max(fragment_range),
+                                    fragment_mark_1,
+                                    fragment_length, signal_meta["rate"]] + list(
+                fragment_interpolate_values_1)  # adding a row
+            fragments_df.index = fragments_df.index + 1  # shifting index
+            fragments_df = fragments_df.sort_index()  # sorting by index
 
-                # добавление данных в Data Frame
-                fragments_df.loc[-1] = [signal_meta["id"], signal_meta["ch"][1], min(fragment_range),
-                                        max(fragment_range),
-                                        fragment_mark,
-                                        fragment_length, signal_meta["rate"]] + list(
-                    fragment_interpolate_values_2)  # adding a row
-                fragments_df.index = fragments_df.index + 1  # shifting index
-                fragments_df = fragments_df.sort_index()  # sorting by index
+            # добавление данных в Data Frame
+            fragments_df.loc[-1] = [signal_meta["id"], signal_meta["ch"][1], min(fragment_range),
+                                    max(fragment_range),
+                                    fragment_mark_2,
+                                    fragment_length, signal_meta["rate"]] + list(
+                fragment_interpolate_values_2)  # adding a row
+            fragments_df.index = fragments_df.index + 1  # shifting index
+            fragments_df = fragments_df.sort_index()  # sorting by index
 
-    all_count = fragments_df.shape[0]
+        if fragment_mark_1 >= edge and fragment_mark_2 >= edge:
+            TT_count += 1
+
     fragments_df = fragments_df.drop_duplicates()
 
     # сохранение Data Frame
@@ -136,7 +143,7 @@ def detect_function(data_t, data_ch, signal_meta, signal_channels, path_to_proj,
         fragments_df = fragments_df.drop_duplicates()
         with open(path_to_csv + file_ch_data_name, "a") as file:
             file.write(f"Total saved fragments: {fragments_df.shape[0] // 2} (x2 channels)\n" +
-                       f"Two-True fragments: {(all_count - fragments_df.shape[0]) // 2} (x2 channels)\n")
+                       f"Two-True fragments: {TT_count} (x2 channels)\n")
             file.close()
         save_df_toFile(fragments_df, file_data_csv_name, path_to_csv)
 
@@ -183,6 +190,7 @@ if __name__ == '__main__':
 
     start = time.time()
     df = read_dataFile(file_path, proj_path)
+    df.t = np.linspace(df.t.min(), df.t.max(), df.t.shape[0])
 
     # log
     print(f"#log: Файл {filename} считан успешно. Tooks - {datetime.timedelta(seconds=int(time.time() - start))}")
