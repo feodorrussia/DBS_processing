@@ -7,6 +7,7 @@ import scipy.interpolate as sc_i
 
 def clear_space(line):
     len_l = len(line)
+    line = line.replace("\t", " ")
     line = line.replace("  ", " ")
     while len_l > len(line):
         len_l = len(line)
