@@ -190,7 +190,7 @@ if __name__ == '__main__':
 
     start = time.time()
     df = read_dataFile(file_path, proj_path)
-    df.t = np.linspace(df.t.min(), df.t.max(), df.t.shape[0])
+    df.t = np.linspace(df.t.min() * 1000, df.t.max() * 1000, df.t.shape[0])
 
     # log
     print(f"#log: Файл {filename} считан успешно. Tooks - {datetime.timedelta(seconds=int(time.time() - start))}")
@@ -233,11 +233,9 @@ if __name__ == '__main__':
 
         if translate_ch_str.lower() in ["y", "у", "e", "н"]:
             f_translate_ch = True
-            db_tot = pd.DataFrame(columns=(['D_ID', 'Ch', 'Ch_Freq', 'Left', 'Right', 'Y', 'Length', 'Rate'] +
-                                           [str(i) for i in range(signal_maxLength)]))
-        else:
-            db_tot = pd.DataFrame(columns=(['D_ID', 'Ch', 'Left', 'Right', 'Y', 'Length', 'Rate'] +
-                                           [str(i) for i in range(signal_maxLength)]))
+
+        db_tot = pd.DataFrame(columns=(['D_ID', 'Ch', 'Ch_Freq', 'Left', 'Right', 'Y', 'Length', 'Rate'] +
+                                       [str(i) for i in range(signal_maxLength)]))
 
         for ch in pair_channels:
             if f_translate_ch:
@@ -248,8 +246,12 @@ if __name__ == '__main__':
             name_pd = f"result_data/{FILE_D_ID}_{neuro_path.split('/')[-1].split('.')[0]}_result_{ch}.csv"
 
             db_1 = pd.read_csv(proj_path + data_path + name_pd)
+
             if f_translate_ch:
                 db_1['Ch_Freq'] = channels_freq
+            else:
+                db_1['Ch_Freq'] = "-"
+
             db_tot = pd.concat([db_tot, db_1], axis=0)
 
             text += f"\n{ch}:\n"

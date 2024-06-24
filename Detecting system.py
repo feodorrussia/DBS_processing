@@ -78,18 +78,18 @@ def detect_function(data_t, data_ch, file_name, signal_meta, signal_channels, pa
 
     # function for work with NN
     for ch_i in range(len(signal_channels)):
-        name_filters = ["cnn_bin_class_12"]  # , "auto_bin_class_12"
+        name_filters = ["cnn_bin_class_13"]  # , "auto_bin_class_12"
         # "auto_bin_class_8", "auto_bin_class_11", "cnn_bin_class_4", "cnn_bin_class_10",
 
         for name_filter in name_filters:
             predictions = filtering_function([fragments[0], fragments[ch_i+1]], name_filter, path_to_proj)
 
             edge = 0.75
-            f_saving = True
+            f_saving = False
 
-            # f_plot = input("\nВедите у, чтобы отобразить кривую распределения результатов: ")
-            # if f_plot.lower() in ["y", "у", "e", "н"]:
-            #     plot_predictionCurve(predictions)
+            f_plot = input("\nВедите у, чтобы отобразить кривую распределения результатов: ")
+            if f_plot.lower() in ["y", "у", "e", "н"]:
+                plot_predictionCurve(predictions)
 
             # try:
             #     edge = float(input("\nВедите граничное значение для оценки филаментов (разделитель - '.'): "))
@@ -115,10 +115,8 @@ def detect_function(data_t, data_ch, file_name, signal_meta, signal_channels, pa
 
                 if not os.path.exists(path_to_csv + "result_data/"):
                     os.mkdir(path_to_csv + "result_data/")
-                if not os.path.exists(path_to_csv + "result_fragments/"):
-                    os.mkdir(path_to_csv + "result_fragments/")
 
-                data_csv_name = f"result_data/{file_name[:-4]}_{name_filter}_result_{add_name_str}data.csv"
+                data_csv_name = f"result_data/{file_name[:-4]}_{name_filter}_result_{add_name_str}all_ch_data.csv"
 
                 # log
                 print("\n#log: Сохранение результатов.")
@@ -130,7 +128,7 @@ def detect_function(data_t, data_ch, file_name, signal_meta, signal_channels, pa
 
                 # remove
                 ind_sec_ch = abs(ch_i - 1)  # remove
-                signal_meta["ch"] = signal_channels[ind_sec_ch] + "_0"  # remove
+                signal_meta["ch"] = signal_channels[ind_sec_ch]  # remove + "_0"
                 save_results_toFiles(predictions, [fragments[0], fragments[ind_sec_ch + 1]], data_csv_name, signal_meta,  # remove
                                      path_to_csv=path_to_proj + path_to_csv, edge=edge,   # remove
                                      f_save_all=f_save_all, f_disp=True)  # remove

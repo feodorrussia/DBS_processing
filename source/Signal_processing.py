@@ -154,7 +154,7 @@ def fft_butter_skewness_filtering(t_data, signal_data, rate, f_disp=False):
     # CONSTANTS
     TOLERANCE = 1  # Чем выше, тем больше шанс получить два филамента на одной картинке
     MIN_PERIODS = 3  # В среднем количество колебаний на графике, начальный порог
-    MAX_PERIODS = 50  #
+    MAX_PERIODS = 30  #
     MAX_FFT_MAX = 10  #
     MAX_SKEWNESS = 0.4  # Абсолютная асимметрия
     MAX_RATIO_FFT = 0.5
