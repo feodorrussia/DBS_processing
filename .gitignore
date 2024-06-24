@@ -7,3 +7,7 @@ test.ipynb
 /test2.ipynb
 
 /img/
+/.ipynb_checkpoints
+__pycache__/Files_operating.cpython-311.pyc
+source/__pycache__/NN_enviroments.cpython-311.pyc
+source/__pycache__/Signal_processing.cpython-311.pyc
