@@ -1,6 +1,7 @@
 import gc
 import os
 import time
+import sys
 
 import pandas as pd
 from keras.models import load_model
@@ -9,30 +10,6 @@ from Files_operating import read_dataFile, save_results_toFiles
 from source.NN_enviroments import *
 from source.Signal_processing import data_converting_CNN, \
     fft_butter_skewness_filtering
-
-
-def get_channel(data):
-    # Предложение пользователю выбрать канал
-    available_channels = [col for col in data.columns if col != "t" and str(data[col][0]) != 'nan']
-    selected_channels = input("\nДоступные каналы: " + ' '.join(
-        available_channels) + "\n----------\nВведите каналы для анализа: ").strip().split()
-    # Проверка наличия выбранного канала в данных
-    if all([selected_channel in available_channels for selected_channel in selected_channels]) and len(selected_channels) > 0:
-        # log
-        print(f"\n#log: Каналы {', '.join(selected_channels)} считаны успешно")
-
-        return selected_channels
-    else:
-        print("Некоторые каналы не найдены в данных.")
-        selected_channels = input("Доступные каналы: " + ' '.join(
-            available_channels) + "\n----------\nВведите каналы для анализа: ").strip().split()
-
-    if all([selected_channel in available_channels for selected_channel in selected_channels]) and len(selected_channels) > 0:
-        # log
-        print(f"\n#log: Каналы {', '.join(selected_channels)} считаны успешно")
-
-        return selected_channels
-    return None
 
 
 def filtering_function(fragments, name_filter, path_to_proj):
@@ -64,7 +41,7 @@ def filtering_function(fragments, name_filter, path_to_proj):
     return predictions
 
 
-def detect_function(data_t, data_ch, file_name, signal_meta, signal_channels, path_to_proj, path_to_csv):
+def detect_function(data_t, data_ch, file_name, signal_meta, signal_channels, path_to_proj, path_to_csv, SIGNAL_RATE):
     # log
     print("\n#log: Начата предварительная обработка данных.")
     start = time.time()
@@ -141,47 +118,59 @@ def detect_function(data_t, data_ch, file_name, signal_meta, signal_channels, pa
                 gc.collect()
 
 
-proj_path = input("Введите путь к запускаемому файлу (Plasma_processing/): ")
-data_path = input("Введите путь к файлам с данными относительно запускаемого файла (data_csv/): ")
+def init_proc(filename, SIGNAL_RATE, ch1, ch2):
+    proj_path = ""  # input("Введите путь к запускаемому файлу (Plasma_processing/): ")
+    data_path = "data_csv/"  # input("Введите путь к файлам с данными относительно запускаемого файла (data_csv/): ")
 
-if not os.path.exists(data_path):
-    os.mkdir(data_path)
+    if not os.path.exists(data_path):
+        os.mkdir(data_path)
 
-filename = input("Введите имя файла. Доступные файлы:\n" + "\n".join(
-    list(filter(lambda x: '.dat' in x or '.txt' in x, os.listdir(data_path)))) + "\n----------\n")
+    # filename = input("Введите имя файла. Доступные файлы:\n" + "\n".join(
+    # list(filter(lambda x: '.dat' in x or '.txt' in x, os.listdir(data_path)))) + "\n----------\n")
 
-file_path = data_path + filename
-FILE_D_ID = filename[:5]  # "00000"
-# log
-print(f"\n#log: Выбран файл {filename} (FILE_ID: {FILE_D_ID})")
+    file_path = data_path + filename
+    FILE_D_ID = filename[:5]  # "00000"
+    # log
+    print(f"\n#log: Выбран файл {filename} (FILE_ID: {FILE_D_ID})")
 
-# filename = "41226 DBS_fragment_for_DA_analytic.csv"  # remove
-# FILE_D_ID = filename[:5] + "_fr"  # remove
-# file_path = data_path + filename  # remove
+    # filename = "41226 DBS_fragment_for_DA_analytic.csv"  # remove
+    # FILE_D_ID = filename[:5] + "_fr"  # remove
+    # file_path = data_path + filename  # remove
 
-start = time.time()
-# df = pd.read_csv(file_path)  # remove
-df = read_dataFile(file_path, proj_path)
+    start = time.time()
+    # df = pd.read_csv(file_path)  # remove
+    df = read_dataFile(file_path, proj_path)
 
-# log
-print(f"#log: Файл {filename} считан успешно. Tooks - {round(time.time() - start, 2) * 1} s.")
-gc.collect()
-
-SIGNAL_RATE = float(input("\nВведите частоту дискретизации для данного сигнала (4 / 10): "))  # 4
-signal_maxLength = 512
-
-channels = get_channel(df)
-while channels is not None:
-    meta = {"id": FILE_D_ID, "rate": SIGNAL_RATE}
-    selected_data = df[["t"] + channels].astype({"t": "float64"})
-
-    # Выбираем область сигнала
-    x = np.array(selected_data.t[(selected_data.t > -np.inf) & (selected_data.t < np.inf)])
-    y = []
-    for ch in channels:
-        y.append(np.array(selected_data[ch][(selected_data.t > -np.inf) & (selected_data.t < np.inf)]))
-
-    detect_function(x, y, filename, meta, channels, proj_path, data_path)
+    # log
+    print(f"#log: Файл {filename} считан успешно. Tooks - {round(time.time() - start, 2) * 1} s.")
     gc.collect()
 
-    channels = get_channel(df)
+    # SIGNAL_RATE = float(input("\nВведите частоту дискретизации для данного сигнала (4 / 10): "))  # 4
+    signal_maxLength = 512
+
+    channels = [ch1, ch2]  # get_channel(df, input_channels)
+    available_channels = [col for col in df.columns if col != "t" and str(df[col][0]) != 'nan']
+    if not all([selected_channel in available_channels for selected_channel in channels]):
+        print("Некоторые каналы не найдены в данных.")
+        return
+    while channels is not None:
+        meta = {"id": FILE_D_ID, "rate": SIGNAL_RATE}
+        selected_data = df[["t"] + channels].astype({"t": "float64"})
+
+        # Выбираем область сигнала
+        x = np.array(selected_data.t[(selected_data.t > -np.inf) & (selected_data.t < np.inf)])
+        y = []
+        for ch in channels:
+            y.append(np.array(selected_data[ch][(selected_data.t > -np.inf) & (selected_data.t < np.inf)]))
+
+        detect_function(x, y, filename, meta, channels, proj_path, data_path, SIGNAL_RATE)
+        gc.collect()
+
+        # channels = get_channel(df)
+
+
+if __name__ == "__main__" and not (sys.stdin and sys.stdin.isatty()):
+    # args from CL: filename, SIGNAL_RATE, ch1, ch2
+    print("Sys args: ", sys.argv)
+    init_proc(sys.argv[1], int(sys.argv[2]), sys.argv[3], sys.argv[4])
+
