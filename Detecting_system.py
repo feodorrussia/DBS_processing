@@ -174,3 +174,6 @@ if __name__ == "__main__" and not (sys.stdin and sys.stdin.isatty()):
     print("Sys args: ", sys.argv)
     init_proc(sys.argv[1], int(sys.argv[2]), sys.argv[3], sys.argv[4])
 
+else:
+    print("Program is supposed to run out from command line.")
+
