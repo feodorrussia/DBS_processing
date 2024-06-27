@@ -20,7 +20,7 @@ def filtering_function(fragments, name_filter, path_to_proj):
     gc.collect()
 
     # neuro-filter
-    neuro_filter = load_model(path_to_proj + f"models/{name_filter}.keras", safe_mode=False, compile=False,
+    neuro_filter = load_model(path_to_proj + f"models/{name_filter}.keras", safe_mode=False,
                               custom_objects={"focal_loss": focal_loss_01,
                                               "focal_loss_01": focal_loss_01,
                                               "focal_crossentropy": focal_crossentropy,
@@ -125,20 +125,12 @@ def init_proc(filename, SIGNAL_RATE, ch1, ch2):
     if not os.path.exists(data_path):
         os.mkdir(data_path)
 
-    # filename = input("Введите имя файла. Доступные файлы:\n" + "\n".join(
-    # list(filter(lambda x: '.dat' in x or '.txt' in x, os.listdir(data_path)))) + "\n----------\n")
-
     file_path = data_path + filename
     FILE_D_ID = filename[:5]  # "00000"
     # log
     print(f"\n#log: Выбран файл {filename} (FILE_ID: {FILE_D_ID})")
 
-    # filename = "41226 DBS_fragment_for_DA_analytic.csv"  # remove
-    # FILE_D_ID = filename[:5] + "_fr"  # remove
-    # file_path = data_path + filename  # remove
-
     start = time.time()
-    # df = pd.read_csv(file_path)  # remove
     df = read_dataFile(file_path, proj_path)
 
     # log
@@ -153,26 +145,28 @@ def init_proc(filename, SIGNAL_RATE, ch1, ch2):
     if not all([selected_channel in available_channels for selected_channel in channels]):
         print("Некоторые каналы не найдены в данных.")
         return
-    while channels is not None:
-        meta = {"id": FILE_D_ID, "rate": SIGNAL_RATE}
-        selected_data = df[["t"] + channels].astype({"t": "float64"})
+    else:
+        print(f"\n#log: Для файла FILE_ID: {FILE_D_ID} выбраны каналы: {ch1}, {ch2}")
+    
+    meta = {"id": FILE_D_ID, "rate": SIGNAL_RATE}
+    selected_data = df[["t"] + channels].astype({"t": "float64"})
 
-        # Выбираем область сигнала
-        x = np.array(selected_data.t[(selected_data.t > -np.inf) & (selected_data.t < np.inf)])
-        y = []
-        for ch in channels:
-            y.append(np.array(selected_data[ch][(selected_data.t > -np.inf) & (selected_data.t < np.inf)]))
+    # Выбираем область сигнала
+    x = np.array(selected_data.t[(selected_data.t > -np.inf) & (selected_data.t < np.inf)])
+    y = []
+    for ch in channels:
+        y.append(np.array(selected_data[ch][(selected_data.t > -np.inf) & (selected_data.t < np.inf)]))
 
-        detect_function(x, y, filename, meta, channels, proj_path, data_path, SIGNAL_RATE)
-        gc.collect()
-
-        # channels = get_channel(df)
+    detect_function(x, y, filename, meta, channels, proj_path, data_path, SIGNAL_RATE)
+    gc.collect()
 
 
 if __name__ == "__main__" and not (sys.stdin and sys.stdin.isatty()):
     # args from CL: filename, SIGNAL_RATE, ch1, ch2
     print("Sys args: ", sys.argv)
-    init_proc(sys.argv[1], int(sys.argv[2]), sys.argv[3], sys.argv[4])
+    channels = sys.argv[3:]
+    for i in range(0, len(channels) - len(channels) % 2, 2):
+        init_proc(sys.argv[1], int(sys.argv[2]), sys.argv[i], sys.argv[i + 1])
 
 else:
     print("Program is supposed to run out from command line.")
