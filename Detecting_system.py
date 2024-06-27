@@ -20,7 +20,7 @@ def filtering_function(fragments, name_filter, path_to_proj):
     gc.collect()
 
     # neuro-filter
-    neuro_filter = load_model(path_to_proj + f"models/{name_filter}.keras", safe_mode=False,
+    neuro_filter = load_model(path_to_proj + f"models/{name_filter}.keras", safe_mode=False, compile=False,
                               custom_objects={"focal_loss": focal_loss_01,
                                               "focal_loss_01": focal_loss_01,
                                               "focal_crossentropy": focal_crossentropy,
@@ -55,7 +55,7 @@ def detect_function(data_t, data_ch, file_name, signal_meta, signal_channels, pa
 
     # function for work with NN
     for ch_i in range(len(signal_channels)):
-        name_filters = ["cnn_bin_class_12"]  # , "auto_bin_class_12"
+        name_filters = ["cnn_bin_class_13"]  # , "auto_bin_class_12"
         # "auto_bin_class_8", "auto_bin_class_11", "cnn_bin_class_4", "cnn_bin_class_10",
 
         for name_filter in name_filters:
