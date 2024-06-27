@@ -55,7 +55,7 @@ def detect_function(data_t, data_ch, file_name, signal_meta, signal_channels, pa
 
     # function for work with NN
     for ch_i in range(len(signal_channels)):
-        name_filters = ["cnn_bin_class_13"]  # , "auto_bin_class_12"
+        name_filters = ["cnn_bin_class_14"]  # , "auto_bin_class_12"
         # "auto_bin_class_8", "auto_bin_class_11", "cnn_bin_class_4", "cnn_bin_class_10",
 
         for name_filter in name_filters:
@@ -118,7 +118,7 @@ def detect_function(data_t, data_ch, file_name, signal_meta, signal_channels, pa
                 gc.collect()
 
 
-def init_proc(filename, SIGNAL_RATE, ch1, ch2):
+def init_proc(filename, SIGNAL_RATE, input_channels):
     proj_path = ""  # input("Введите путь к запускаемому файлу (Plasma_processing/): ")
     data_path = "data_csv/"  # input("Введите путь к файлам с данными относительно запускаемого файла (data_csv/): ")
 
@@ -140,33 +140,32 @@ def init_proc(filename, SIGNAL_RATE, ch1, ch2):
     # SIGNAL_RATE = float(input("\nВведите частоту дискретизации для данного сигнала (4 / 10): "))  # 4
     signal_maxLength = 512
 
-    channels = [ch1, ch2]  # get_channel(df, input_channels)
-    available_channels = [col for col in df.columns if col != "t" and str(df[col][0]) != 'nan']
-    if not all([selected_channel in available_channels for selected_channel in channels]):
-        print("Некоторые каналы не найдены в данных.")
-        return
-    else:
-        print(f"\n#log: Для файла FILE_ID: {FILE_D_ID} выбраны каналы: {ch1}, {ch2}")
+    for i in range(0, len(input_channels) - len(input_channels) % 2, 2):
+        channels = [input_channels[i], input_channels[i + 1]]  # get_channel(df, input_channels)
+        available_channels = [col for col in df.columns if col != "t" and str(df[col][0]) != 'nan']
+        if not all([selected_channel in available_channels for selected_channel in channels]):
+            print(f"Некоторые каналы не найдены в данных ({channels}).")
+            return
+        else:
+            print(f"\n#log: Для файла FILE_ID: {FILE_D_ID} выбраны каналы: {channels}")
+        
+        meta = {"id": FILE_D_ID, "rate": SIGNAL_RATE}
+        selected_data = df[["t"] + channels].astype({"t": "float64"})
     
-    meta = {"id": FILE_D_ID, "rate": SIGNAL_RATE}
-    selected_data = df[["t"] + channels].astype({"t": "float64"})
-
-    # Выбираем область сигнала
-    x = np.array(selected_data.t[(selected_data.t > -np.inf) & (selected_data.t < np.inf)])
-    y = []
-    for ch in channels:
-        y.append(np.array(selected_data[ch][(selected_data.t > -np.inf) & (selected_data.t < np.inf)]))
-
-    detect_function(x, y, filename, meta, channels, proj_path, data_path, SIGNAL_RATE)
-    gc.collect()
+        # Выбираем область сигнала
+        x = np.array(selected_data.t[(selected_data.t > -np.inf) & (selected_data.t < np.inf)])
+        y = []
+        for ch in channels:
+            y.append(np.array(selected_data[ch][(selected_data.t > -np.inf) & (selected_data.t < np.inf)]))
+    
+        detect_function(x, y, filename, meta, channels, proj_path, data_path, SIGNAL_RATE)
+        gc.collect()
 
 
 if __name__ == "__main__" and not (sys.stdin and sys.stdin.isatty()):
     # args from CL: filename, SIGNAL_RATE, ch1, ch2
     print("Sys args: ", sys.argv)
-    channels = sys.argv[3:]
-    for i in range(0, len(channels) - len(channels) % 2, 2):
-        init_proc(sys.argv[1], int(sys.argv[2]), sys.argv[i], sys.argv[i + 1])
+    init_proc(sys.argv[1], int(sys.argv[2]), sys.argv[3:])
 
 else:
     print("Program is supposed to run out from command line.")
