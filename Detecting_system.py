@@ -4,7 +4,7 @@ import time
 import sys
 
 import pandas as pd
-from keras.models import load_model
+from tensorflow.python.keras.models import load_model
 
 from Files_operating import read_dataFile, save_results_toFiles
 from source.NN_enviroments import *
@@ -20,7 +20,7 @@ def filtering_function(fragments, name_filter, path_to_proj):
     gc.collect()
 
     # neuro-filter
-    neuro_filter = load_model(path_to_proj + f"models/{name_filter}.keras", safe_mode=False,
+    neuro_filter = load_model(path_to_proj + f"models/{name_filter}.keras",
                               custom_objects={"focal_loss": focal_loss_01,
                                               "focal_loss_01": focal_loss_01,
                                               "focal_crossentropy": focal_crossentropy,
