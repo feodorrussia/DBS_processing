@@ -4,7 +4,7 @@ import time
 import sys
 
 import pandas as pd
-from tensorflow.python.keras.models import load_model
+from tensorflow.keras.models import load_model
 
 from Files_operating import read_dataFile, save_results_toFiles
 from source.NN_enviroments import *
@@ -41,7 +41,7 @@ def filtering_function(fragments, name_filter, path_to_proj):
     return predictions
 
 
-def detect_function(data_t, data_ch, file_name, signal_meta, signal_channels, path_to_proj, path_to_csv, SIGNAL_RATE):
+def detect_function(data_t, data_ch, file_name, signal_meta, signal_channels, path_to_proj, path_to_csv, nn_filename, SIGNAL_RATE):
     # log
     print("\n#log: Начата предварительная обработка данных.")
     start = time.time()
@@ -55,72 +55,54 @@ def detect_function(data_t, data_ch, file_name, signal_meta, signal_channels, pa
 
     # function for work with NN
     for ch_i in range(len(signal_channels)):
-        name_filters = ["cnn_bin_class_14"]  # , "auto_bin_class_12"
-        # "auto_bin_class_8", "auto_bin_class_11", "cnn_bin_class_4", "cnn_bin_class_10",
+        name_filter = nn_filename
 
-        for name_filter in name_filters:
-            predictions = filtering_function([fragments[0], fragments[ch_i+1]], name_filter, path_to_proj)
+        predictions = filtering_function([fragments[0], fragments[ch_i+1]], name_filter, path_to_proj)
 
-            edge = 0.75
-            f_saving = True
+        edge = 0.75
 
-            # f_plot = input("\nВедите у, чтобы отобразить кривую распределения результатов: ")
-            # if f_plot.lower() in ["y", "у", "e", "н"]:
-            #     plot_predictionCurve(predictions)
+        filtered = predictions >= edge
+        # log
+        print(f"\n#log: Обработка завершена. Проведена оценка с границей: {edge}")
 
-            # try:
-            #     edge = float(input("\nВедите граничное значение для оценки филаментов (разделитель - '.'): "))
-            # except Exception as e:
-            #     pass
+        # log
+        print("==========================================")
+        print(f"#log: Количество спрогнозированных филаментов: {len(list(filter(lambda x: x, filtered)))}")
+        print("==========================================")
 
-            filtered = predictions >= edge
-            # log
-            print(f"\n#log: Обработка завершена. Проведена оценка с границей: {edge}")
+        f_save_all = False
 
-            # log
-            print("==========================================")
-            print(f"#log: Количество спрогнозированных филаментов: {len(list(filter(lambda x: x, filtered)))}")
-            print("==========================================")
+        if not os.path.exists(path_to_csv + "result_data/"):
+            os.mkdir(path_to_csv + "result_data/")
+        if not os.path.exists(path_to_csv + "result_fragments/"):
+            os.mkdir(path_to_csv + "result_fragments/")
 
-            if f_saving or input("\nВедите у, чтобы запустить процесс сохранения: ").lower() in ["y", "у", "e", "н"]:
-                # f_save = input("\nВедите у, чтобы сохранить все фрагменты (без фильтрации по оценке): ")
-                f_save_all = False
-                add_name_str = "fil_"
-                # if f_save.lower() in ["y", "у", "e", "н"]:
-                #     f_save_all = True
-                #     add_name_str = "all_"
+        data_csv_name = f"result_data/{file_name[:-4]}_{name_filter}_data.csv"
 
-                if not os.path.exists(path_to_csv + "result_data/"):
-                    os.mkdir(path_to_csv + "result_data/")
-                if not os.path.exists(path_to_csv + "result_fragments/"):
-                    os.mkdir(path_to_csv + "result_fragments/")
+        # log
+        print("\n#log: Сохранение результатов.")
+        start = time.time()
+        signal_meta["ch"] = signal_channels[ch_i]
+        save_results_toFiles(predictions, [fragments[0], fragments[ch_i + 1]], data_csv_name, signal_meta,
+                             path_to_csv=path_to_proj + path_to_csv, edge=edge,
+                             f_save_all=f_save_all, f_disp=True)
 
-                data_csv_name = f"result_data/{file_name[:-4]}_{name_filter}_result_{add_name_str}data.csv"
+        # remove
+        ind_sec_ch = abs(ch_i - 1)  # remove
+        signal_meta["ch"] = signal_channels[ind_sec_ch] + "_0"  # remove
+        save_results_toFiles(predictions, [fragments[0], fragments[ind_sec_ch + 1]], data_csv_name, signal_meta,  # remove
+                             path_to_csv=path_to_proj + path_to_csv, edge=edge,   # remove
+                             f_save_all=f_save_all, f_disp=True)  # remove
 
-                # log
-                print("\n#log: Сохранение результатов.")
-                start = time.time()
-                signal_meta["ch"] = signal_channels[ch_i]
-                save_results_toFiles(predictions, [fragments[0], fragments[ch_i + 1]], data_csv_name, signal_meta,
-                                     path_to_csv=path_to_proj + path_to_csv, edge=edge,
-                                     f_save_all=f_save_all, f_disp=True)
-
-                # remove
-                ind_sec_ch = abs(ch_i - 1)  # remove
-                signal_meta["ch"] = signal_channels[ind_sec_ch] + "_0"  # remove
-                save_results_toFiles(predictions, [fragments[0], fragments[ind_sec_ch + 1]], data_csv_name, signal_meta,  # remove
-                                     path_to_csv=path_to_proj + path_to_csv, edge=edge,   # remove
-                                     f_save_all=f_save_all, f_disp=True)  # remove
-
-                # log
-                print(f"#log: Результаты сохранены. Tooks - {round(time.time() - start, 2) * 1} s. Файлы:\n" +
-                      f"{path_to_proj + path_to_csv + data_csv_name}\n")
-                gc.collect()
+        # log
+        print(f"#log: Результаты сохранены. Tooks - {round(time.time() - start, 2) * 1} s. Файлы:\n" +
+              f"{path_to_proj + path_to_csv + data_csv_name}\n")
+        gc.collect()
 
 
-def init_proc(filename, SIGNAL_RATE, input_channels):
-    proj_path = ""  # input("Введите путь к запускаемому файлу (Plasma_processing/): ")
-    data_path = "data_csv/"  # input("Введите путь к файлам с данными относительно запускаемого файла (data_csv/): ")
+def init_proc(filename, nn_name, SIGNAL_RATE, input_channels):
+    proj_path = ""
+    data_path = "data_csv/"
 
     if not os.path.exists(data_path):
         os.mkdir(data_path)
@@ -131,13 +113,12 @@ def init_proc(filename, SIGNAL_RATE, input_channels):
     print(f"\n#log: Выбран файл {filename} (FILE_ID: {FILE_D_ID})")
 
     start = time.time()
-    df = read_dataFile(file_path, proj_path)
+    df = read_dataFile(file_path, proj_path, id_file=FILE_D_ID)
 
     # log
     print(f"#log: Файл {filename} считан успешно. Tooks - {round(time.time() - start, 2) * 1} s.")
     gc.collect()
-
-    # SIGNAL_RATE = float(input("\nВведите частоту дискретизации для данного сигнала (4 / 10): "))  # 4
+    
     signal_maxLength = 512
 
     for i in range(0, len(input_channels) - len(input_channels) % 2, 2):
@@ -158,14 +139,14 @@ def init_proc(filename, SIGNAL_RATE, input_channels):
         for ch in channels:
             y.append(np.array(selected_data[ch][(selected_data.t > -np.inf) & (selected_data.t < np.inf)]))
     
-        detect_function(x, y, filename, meta, channels, proj_path, data_path, SIGNAL_RATE)
+        detect_function(x, y, filename, meta, channels, proj_path, data_path, nn_name, SIGNAL_RATE)
         gc.collect()
 
 
 if __name__ == "__main__" and not (sys.stdin and sys.stdin.isatty()):
-    # args from CL: filename, SIGNAL_RATE, ch1, ch2
-    print("Sys args: ", sys.argv)
-    init_proc(sys.argv[1], int(sys.argv[2]), sys.argv[3:])
+    # get args from CL
+    print("Sys args (filename | NN filename | SIGNAL_RATE | ch1 ch2 ...):\n", sys.argv)
+    init_proc(sys.argv[1], sys.argv[2], int(sys.argv[3]), sys.argv[4:])
 
 else:
     print("Program is supposed to run out from command line.")

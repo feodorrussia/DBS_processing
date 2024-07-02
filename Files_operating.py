@@ -15,7 +15,9 @@ def clear_space(line):
     return line
 
 
-def read_dataFile(file_path, path_to_proj):
+def read_dataFile(file_path, path_to_proj, id_file=""):
+    new_filename = f'fil_{id_file}.dat'
+    
     with open(file_path, 'r') as f:
         lines = f.readlines()
 
@@ -28,13 +30,13 @@ def read_dataFile(file_path, path_to_proj):
     # чистим пробелы
     lines = list(map(clear_space, lines))
 
-    with open(path_to_proj + 'fil.dat', 'w') as f:
+    with open(path_to_proj + new_filename, 'w') as f:
         f.writelines(lines)
 
     # Загрузка всех столбцов из файла
-    data = pd.read_table(path_to_proj + "fil.dat", sep=" ", names=["t"] + ["ch{}".format(i) for i in range(1, 30)])
+    data = pd.read_table(path_to_proj + new_filename, sep=" ", names=["t"] + ["ch{}".format(i) for i in range(1, 30)])
 
-    os.remove(path_to_proj + 'fil.dat')
+    os.remove(path_to_proj + new_filename)
 
     return data.dropna(axis=1)
 
