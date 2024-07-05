@@ -89,8 +89,6 @@ def detect_function(data_t, data_ch, file_name, signal_meta, signal_channels, pa
 
         if not os.path.exists(path_to_csv + "result_data/"):
             os.mkdir(path_to_csv + "result_data/")
-        if not os.path.exists(path_to_csv + "result_fragments/"):
-            os.mkdir(path_to_csv + "result_fragments/")
 
         data_csv_name = f"result_data/{file_name[:-4]}_{name_filter}_data.csv"
 
