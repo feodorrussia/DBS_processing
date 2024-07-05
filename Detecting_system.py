@@ -13,6 +13,9 @@ from source.Signal_processing import data_converting_CNN, \
 
 
 def filtering_function(fragments, name_filter, path_to_proj):
+    if len(fragments[0]) == 0:
+        return None
+    
     fragments_smooth = data_converting_CNN(fragments)
     # log
     print("#log: Данные фрагментов нормализованы и подготовлены для нейро-фильтра.")
@@ -53,22 +56,34 @@ def detect_function(data_t, data_ch, file_name, signal_meta, signal_channels, pa
     print(f"#log: Количество найденных фрагментов: {len(fragments[0])}")
     print("==========================================")
 
-    # function for work with NN
+    if len(fragments[0]) == 0:
+        print("\n")
+        return 
+    
+    # single fragment analysis with NN
     for ch_i in range(len(signal_channels)):
         name_filter = nn_filename
 
         predictions = filtering_function([fragments[0], fragments[ch_i+1]], name_filter, path_to_proj)
+        
+        if predictions is None:
+            print("\n")
+            continue
 
         edge = 0.75
-
+    
         filtered = predictions >= edge
         # log
         print(f"\n#log: Обработка завершена. Проведена оценка с границей: {edge}")
 
         # log
         print("==========================================")
-        print(f"#log: Количество спрогнозированных филаментов: {len(list(filter(lambda x: x, filtered)))}")
+        print(f"#log: Количество спрогнозированных филаментов: {len(filtered)}")
         print("==========================================")
+
+        if len(filtered) == 0:
+            print("\n")
+            continue
 
         f_save_all = False
 
