@@ -263,9 +263,9 @@ def fragment_smoothing_preproc(x, y, SIGNAL_RATE, FRAGMENT_LEN):
     signal_fragments = y_smooth
 
     # get min & max points values from all check data
-    max_point, min_point = signal_fragments.max(), signal_fragments.min()
+    max_point, min_point, median_value = signal_fragments.max(), signal_fragments.min(), signal_fragments.median()
     # normalise all values
-    signal_fragments = (signal_fragments - (max_point + min_point) / 2) / (max_point - min_point)
+    signal_fragments = (signal_fragments - median_value) / (max_point - min_point)
 
     return [signal_fragments, [length_fragments, rate_fragments]]
 
