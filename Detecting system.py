@@ -139,7 +139,7 @@ def detect_function(data_t, data_ch, file_name, signal_meta, signal_channels, pa
                 gc.collect()
 
 
-proj_path = input("Введите путь к запускаемому файлу (Plasma_processing/): ")
+proj_path = input("Введите путь к запускаемому файлу (DBS-processing/): ")
 data_path = input("Введите путь к файлам с данными относительно запускаемого файла (data_csv/): ")
 
 if not os.path.exists(data_path):

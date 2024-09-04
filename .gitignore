@@ -15,3 +15,6 @@ Run system-Copy1.ipynb
 Run system-Copy2.ipynb
 /source/44330 old editor_test.ipynb
 /detect_app.py
+/source/Test_Butt_paper.ipynb
+*.pyc
+/.idea
